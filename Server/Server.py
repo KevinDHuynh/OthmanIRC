@@ -81,6 +81,8 @@ def get_nickname_num(nickname, num):
         return get_nickname_num(nickname, num + 1)
     return name
 
+def user_in_channel(connection, channelname):
+    return channelname in clients[connection].channelsin
 
 # sends message to all clients in channel from user with time stamp
 def server_send_channelmessage(channelname, user, data):
@@ -88,7 +90,7 @@ def server_send_channelmessage(channelname, user, data):
     print(channels[channelname].connectedclients)
     for connection in clients:
         client = clients[connection]
-        if client.nickname != user and channelname in client.channelsin:
+        if client.nickname != user:
             connection.send(message.encode())
     print(message)
 
