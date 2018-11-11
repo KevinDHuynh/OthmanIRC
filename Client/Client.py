@@ -53,7 +53,7 @@ def receive():
 def send(event=None):  # event is passed by binders.
     """Handles sending of messages."""
     channel = "#general"
-    msg = channel+":" +app.getEntry("Entry")
+    msg = channel+"&&" +app.getEntry("Entry")
     app.setEntry("Entry","")
     channelMsg, msgBody = msg.split("&&")
     app.addListItem("MessageList", nickname+": " + msgBody)
