@@ -43,7 +43,8 @@ def receive():
     while True:
         try:
             msg = clientSocket.recv(1024).decode("utf8")
-            app.addListItem("MessageList", msg)
+            time,msgChannel,msgUser,msgData = msg.split(":")
+            app.addListItem("MessageList", msgUser+": "+msgData)
 
         except OSError:  # Possibly client has left the chat.
             break
@@ -82,7 +83,7 @@ def connect():
     return True
 
 app = gui("OthmanIRC 0.01")
-app.setSize(1280,720)
+app.icon = "icon.gif"
 app.startTabbedFrame("Channels")
 app.startTab("Server")
 app.addListBox("MessageList")
