@@ -2,3 +2,5 @@ connecting msg password:nickname:autojoin
 connecting return server nickname:channel
 client send channel message channel:data
 server send channel message time:channel:user:data
+
+➰
