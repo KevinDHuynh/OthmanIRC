@@ -14,14 +14,21 @@ sockobj.bind((myHost, myPort))
 sockobj.listen(10)
 
 
+# channel class, Name and Password for Channel
+# If password = ' ' a password is not required to join the server
+# handles what users are in the channel and the channel infomation
 class channel:
 
-    def __init__(self, name, password=''):
+    def __init__(self, name, password=' '):
         self.name = name
         self.password = password
+        # connectedclients[connection] = client
         self.connectedclients = {}
+        channels[name] = self
 
 
+# client class
+# handles user data and connection
 class client:
 
     def __init__(self, connection, address, password, nickname, autojoin="General"):
@@ -29,44 +36,68 @@ class client:
         self.address = address
         self.password = password
         self.nickname = get_nickname(nickname)
+        self.channel = {}
         if autojoin in channels and channels[autojoin].password == password:
             client_connect_channel(channels[autojoin], self)
             self.channel = channels[autojoin]
         else:
             client_connect_channel(channels["General"], self)
             self.channel = channels["General"]
+            clients[connection] = self
 
 
-def client_connect_channel(channel, client):
-    channel.connectedclients[client.connection] = client
+# Connects cient to the channel if the password is correct or the server password is ' '
+def client_connect_channel(channelname, client, password=' '):
+    if channelname in channels:
+        if channels[channelname].password == password or channels[channelname].password == ' ':
+            channel.connectedclients[client.connection] = client
+            client.channel[channelname] = channels[channelname]
+            return True
+    return False
 
 
+# creates client when it first connects
+# data should be in format password:nickname:autojoin
 def clientFirstConnect(connection, address, data):
     password, nickname, autojoin = data.split(':')
     clients[connection] = client(connection, address, password, nickname, autojoin)
 
 
+# return current time
 def now():
     return time.ctime(time.time())
 
-def get_nickname(nickname):
 
+# returns an available nickname
+# if nickname is taken will use get_nickname_num if name is taken and append a number to end of nickname
+def get_nickname(nickname):
     if nickname in claimedusernames:
         nickname = get_nickname_num(nickname, 1)
     return nickname
 
+
+# used with get_nickname
 def get_nickname_num(nickname, num):
     if nickname.append(str(num)) in claimedusernames:
         nickname = get_nickname_num(nickname, num + 1)
     return nickname
+
+
+# sends message to all clients in channel from user with time stamp
+def server_send_channelmessage(channel, user, data):
+    message = str(now() + ':' + channel + ':' + user + ':' + data)
+    for connection in channels[channel].connectedclients:
+        connection.send(message.encode())
+
 
 def handleClient(connection):
     clientFirstConnect(connection.recv(1024).decode())
     connection.send(str(clients[connection].username) + ":" + str(clients[connection].channel))
     while True:
         data = connection.recv(1024).decode()
-        if not data: break
-        connection.send(('Echo=>%s at %s' % (data, now())).encode())
+        header, data = data.split(":")
+        if header in channel:
+            server_send_channelmessage(header, clients[connection].nickname, data)
     connection.close()
 
 
@@ -82,4 +113,5 @@ def dispatcher():  # listen until process killed
 
 
 generalChannel = channel("General", ' ')
+
 dispatcher()
