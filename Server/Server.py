@@ -111,7 +111,7 @@ def handleClient(connection):
 
 
 def dispatcher():  # listen until process killed
-    while True:  # wait for next connection,
+    while True:  # wait for next connection
         connection, address = sockobj.accept()  # pass to thread for service
         _thread.start_new(handleClient, (connection,))
 
