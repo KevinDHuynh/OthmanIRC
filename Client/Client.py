@@ -43,7 +43,7 @@ def receive():
     while True:
         try:
             msg = clientSocket.recv(1024).decode("utf8")
-            time,msgChannel,msgUser,msgData = msg.split(":")
+            msgChannel,msgUser,msgData = msg.split("&&")
             app.addListItem("MessageList", msgUser+": "+msgData)
 
         except OSError:  # Possibly client has left the chat.
@@ -53,9 +53,9 @@ def receive():
 def send(event=None):  # event is passed by binders.
     """Handles sending of messages."""
     channel = "#general"
-    msg = channel+":" +app.getEntry("Entry")
+    msg = channel+"&&" +app.getEntry("Entry")
     app.setEntry("Entry","")
-    channelMsg,msgBody = msg.split(":")
+    channelMsg, msgBody = msg.split("&&")
     app.addListItem("MessageList", nickname+": " + msgBody)
     clientSocket.send(msg.encode())
     if msg == "/quit":
@@ -72,7 +72,7 @@ def connect():
         clientSocket.connect((serverName, int(serverPort)))
     except:
         return False
-    initMessage = password + ":" + nickname + ':' + autojoin
+    initMessage = password + "&&" + nickname + '&&' + autojoin
     clientSocket.send(initMessage.encode())
     handshake = clientSocket.recv(1024).decode()
     if not handshake:
