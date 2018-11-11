@@ -1,5 +1,4 @@
 import _thread
-import time
 import socket  # get socket constructor and constants
 
 myHost = ''  # server machine, '' means local host
@@ -7,7 +6,7 @@ myPort = 6667  # listen on a non-reserved port number
 
 clients = {}
 channels = {}
-claimedusernames = {}
+claimednicknames = []
 
 sockobj = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sockobj.bind((myHost, myPort))
@@ -22,7 +21,6 @@ class channel:
     def __init__(self, name, password=' '):
         self.name = name
         self.password = password
-        # connectedclients[connection] = client
         self.connectedclients = {}
         channels[name] = self
 
@@ -31,26 +29,29 @@ class channel:
 # handles user data and connection
 class client:
 
-    def __init__(self, connection, address, password, nickname, autojoin="General"):
+    def __init__(self, connection, password, nickname, autojoin="#general"):
         self.connection = connection
-        self.address = address
         self.password = password
         self.nickname = get_nickname(nickname)
-        self.channel = {}
+        claimednicknames.append(self.nickname)
+        self.channelsin = {}
         if autojoin in channels and channels[autojoin].password == password:
             client_connect_channel(channels[autojoin], self)
-            self.channel = channels[autojoin]
+            self.channelsin = channels[autojoin]
         else:
-            client_connect_channel(channels["General"], self)
-            self.channel = channels["General"]
+            client_connect_channel(channels["#general"], self)
+            self.channelsin = channels["#general"]
             clients[connection] = self
 
 
-# Connects cient to the channel if the password is correct or the server password is ' '
+# Connects client to the channel if the password is correct or the server password is ' '
 def client_connect_channel(channelname, client, password=' '):
+    print("client connect channel")
     if channelname in channels:
+        print("channelname in channels")
         if channels[channelname].password == password or channels[channelname].password == ' ':
-            channel.connectedclients[client.connection] = client
+            print("Password Match")
+            channels[channelname].connectedclients[client.connection] = client
             client.channel[channelname] = channels[channelname]
             return True
     return False
@@ -58,60 +59,60 @@ def client_connect_channel(channelname, client, password=' '):
 
 # creates client when it first connects
 # data should be in format password:nickname:autojoin
-def clientFirstConnect(connection, address, data):
-    password, nickname, autojoin = data.split(':')
-    clients[connection] = client(connection, address, password, nickname, autojoin)
-
-
-# return current time
-def now():
-    return time.ctime(time.time())
+def clientFirstConnect(connection, data):
+    password, nickname, autojoin = data.split("&&")
+    clients[connection] = client(connection, password, nickname, autojoin)
 
 
 # returns an available nickname
 # if nickname is taken will use get_nickname_num if name is taken and append a number to end of nickname
 def get_nickname(nickname):
-    if nickname in claimedusernames:
+    print("test")
+    if nickname in claimednicknames:
         nickname = get_nickname_num(nickname, 1)
     return nickname
 
 
 # used with get_nickname
 def get_nickname_num(nickname, num):
-    if nickname.append(str(num)) in claimedusernames:
-        nickname = get_nickname_num(nickname, num + 1)
-    return nickname
+    name = nickname + str(num)
+    print(name)
+    if name in claimednicknames:
+        return get_nickname_num(nickname, num + 1)
+    return name
 
 
 # sends message to all clients in channel from user with time stamp
-def server_send_channelmessage(channel, user, data):
-    message = str(now() + ':' + channel + ':' + user + ':' + data)
-    for connection in channels[channel].connectedclients:
-        connection.send(message.encode())
+def server_send_channelmessage(channelname, user, data):
+    message = str(channelname + "&&" + user + "&&" + data)
+    print(channels[channelname].connectedclients)
+    for connection in clients:
+        client = clients[connection]
+        if client.nickname != user and channelname in client.channelsin:
+            connection.send(message.encode())
+    print(message)
 
 
 def handleClient(connection):
-    clientFirstConnect(connection.recv(1024).decode())
-    connection.send(str(clients[connection].username) + ":" + str(clients[connection].channel))
+    clientFirstConnect(connection, connection.recv(1024).decode())
+    connection.send((str(clients[connection].nickname) + "&&" + str(clients[connection].channelsin.name)).encode())
+    print(str(clients[connection].nickname) + "&&" + str(clients[connection].channelsin.name))
     while True:
         data = connection.recv(1024).decode()
-        header, data = data.split(":")
-        if header in channel:
+        print(data)
+        header, data = data.split("&&")
+        print(header)
+        if header in channels:
             server_send_channelmessage(header, clients[connection].nickname, data)
+
     connection.close()
 
 
 def dispatcher():  # listen until process killed
     while True:  # wait for next connection,
         connection, address = sockobj.accept()  # pass to thread for service
-        clients[address] = connection
-        print('Server connected by', address)
-        print('at', now())
-        for x in clients:
-            print(str(x))
         _thread.start_new(handleClient, (connection,))
 
 
-generalChannel = channel("General", ' ')
-
+generalChannel = channel("#general", ' ')
 dispatcher()
