@@ -3,9 +3,10 @@
 import socket
 from threading import Thread
 from appJar import gui
+import random
 
 serverName = ''
-serverPort = 0
+serverPort = ''
 nickname = ''
 autojoin = ''
 password = ''
@@ -24,8 +25,16 @@ def press(button):
         nickname = app.getEntry("Nickname")
         autojoin = app.getEntry("Autojoin")
         password = app.getEntry("Password")
-        app.hide()
-        connect()
+        if not serverPort:
+            serverport = "6667"
+        if not nickname:
+            nickname = 'Guest' + str(random.randint(1000,9999))
+        if not serverName:
+            app.errorBox("noServer","No server IP was given.")
+        else:
+            if connect():
+                app.hideSubWindow("Connect")
+                app.show()
     else:
         app.stop()
 
@@ -34,59 +43,68 @@ def receive():
     while True:
         try:
             msg = clientSocket.recv(1024).decode("utf8")
-            gui.addLabel("lastMessage", msg)
+            app.addListItem("MessageList", msg)
+
         except OSError:  # Possibly client has left the chat.
             break
 
 
 def send(event=None):  # event is passed by binders.
     """Handles sending of messages."""
-    msg = my_msg.get()
-    my_msg.set("")  # Clears input field.
-    clientSocket.send(bytes(msg, "utf8"))
-    if msg == "{quit}":
+    channel = "general"
+    msg = channel+":" +app.getEntry("Entry")
+    app.setEntry("Entry","")
+    channelMsg,msgBody = msg.split(":")
+    app.addListItem("MessageList", nickname+": "+ msgBody)
+    clientSocket.send(msg.encode())
+    if msg == "/quit":
         clientSocket.close()
         app.quit()
 
 
 def on_closing(event=None):
     """This function is to be called when the window is closed."""
-    my_msg.set("{quit}")
-    send()
+    app.stop()
 
 def connect():
-    clientSocket.connect((serverName, serverPort))
-
-    initialMessage = password + ":" + nickname + ':' + autojoin
-
-    outputMessage = input()
-    clientSocket.send(outputMessage.encode())
-    inputMessage = clientSocket.recv(1024).decode()
-    print('Server:', inputMessage)
-
-    clientSocket.close()
-
+    try:
+        clientSocket.connect((serverName, int(serverPort)))
+    except:
+        return False
+    initMessage = password + ":" + nickname + ':' + autojoin
+    clientSocket.send(initMessage.encode())
+    handshake = clientSocket.recv(1024).decode()
+    if not handshake:
+        app.errorBox("Could not connect.")
+        return False
+    receive_thread = Thread(target=receive)
+    receive_thread.start()
+    return True
 
 app = gui("OthmanIRC 0.01")
-app.setSize(300,200)
+app.setSize(1280,720)
+app.startTabbedFrame("Channels")
+app.startTab("Server")
+app.addListBox("MessageList")
+app.addLabelEntry("Entry").bind("<Return>", send)
+app.setEntryDefault("Entry","Enter message here.")
+app.addButton("Send", send)
+app.stopTab()
+app.stopTabbedFrame()
+
+
+app.startSubWindow("Connect")
 app.addLabelEntry("Server")
 app.addLabelEntry("Port")
 app.addLabelSecretEntry("Password")
 app.addLabelEntry("Nickname")
 app.addLabelEntry("Autojoin")
-app.setEntryDefault("Server","127.0.0.1")
-app.setEntryDefault("Nickname","guest")
+app.setEntryDefault("Server", "127.0.0.1")
+app.setEntryDefault("Nickname", "guest")
 app.setEntryDefault("Port", "6667")
 app.addButtons(["Connect", "Cancel"], press)
-
-
-""""""""""""""""""""""""""""""""""""
-
+app.stopSubWindow()
 
 
 
-
-receive_thread = Thread(target=receive)
-receive_thread.start()
-
-app.go()
+app.go(startWindow="Connect")
