@@ -41,7 +41,6 @@ class client:
         else:
             client_connect_channel(channels["#general"], self)
             self.channelsin = channels["#general"]
-            clients[connection] = self
 
 
 # Connects client to the channel if the password is correct or the server password is ' '
@@ -56,6 +55,9 @@ def client_connect_channel(channelname, client, password=' '):
             return True
     return False
 
+def client_remove_channel (channelname, client):
+    clients[client].channelsin.remove(channelname)
+    channels[channelname].connectedclients.pop(client)
 
 # creates client when it first connects
 # data should be in format password:nickname:autojoin
@@ -81,8 +83,10 @@ def get_nickname_num(nickname, num):
         return get_nickname_num(nickname, num + 1)
     return name
 
+
 def user_in_channel(connection, channelname):
     return channelname in clients[connection].channelsin
+
 
 # sends message to all clients in channel from user with time stamp
 def server_send_channelmessage(channelname, user, data):
@@ -95,20 +99,29 @@ def server_send_channelmessage(channelname, user, data):
     print(message)
 
 
+def clientremoved(connection, error="unknown reason"):
+    print(str(clients[connection].nickname)+" removed from server because " + str(error))
+
+
 def handleClient(connection):
-    clientFirstConnect(connection, connection.recv(1024).decode())
-    connection.send((str(clients[connection].nickname) + "&&" + str(clients[connection].channelsin.name)).encode())
-    print(str(clients[connection].nickname) + "&&" + str(clients[connection].channelsin.name))
-    while True:
-        data = connection.recv(1024).decode()
-        print(data)
-        header, data = data.split("&&")
-        print(header)
-        if header in channels:
-            server_send_channelmessage(header, clients[connection].nickname, data)
-
-    connection.close()
-
+        clientFirstConnect(connection, connection.recv(1024).decode())
+        connection.send((str(clients[connection].nickname) + "&&" + str(clients[connection].channelsin.name)).encode())
+        print(str(clients[connection].nickname) + "&&" + str(clients[connection].channelsin.name))
+        while True:
+            try:
+                data = connection.recv(1024).decode()
+                print(data)
+                header, data = data.split("&&")
+                if data[:1] == '/':
+                    if data == "/quit":
+                        clientremoved(connection, "closed by client")
+                        break
+                elif header in channels:
+                    server_send_channelmessage(header, clients[connection].nickname, data)
+            except ConnectionResetError:
+                clientremoved(connection, "connection was forcibly closed by the client")
+                break
+        connection.close()
 
 def dispatcher():  # listen until process killed
     while True:  # wait for next connection,
