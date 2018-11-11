@@ -26,7 +26,7 @@ def press(button):
         autojoin = app.getEntry("Autojoin")
         password = app.getEntry("Password")
         if not serverPort:
-            serverport = "6667"
+            serverport = 6667
         if not nickname:
             nickname = 'Guest' + str(random.randint(1000,9999))
         if not serverName:
@@ -52,11 +52,11 @@ def receive():
 
 def send(event=None):  # event is passed by binders.
     """Handles sending of messages."""
-    channel = "general"
+    channel = "#general"
     msg = channel+":" +app.getEntry("Entry")
     app.setEntry("Entry","")
     channelMsg,msgBody = msg.split(":")
-    app.addListItem("MessageList", nickname+": "+ msgBody)
+    app.addListItem("MessageList", nickname+": " + msgBody)
     clientSocket.send(msg.encode())
     if msg == "/quit":
         clientSocket.close()
