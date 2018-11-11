@@ -68,6 +68,7 @@ def on_closing(event=None):
     app.stop()
 
 def connect():
+    global nickname
     try:
         clientSocket.connect((serverName, int(serverPort)))
     except:
@@ -75,6 +76,8 @@ def connect():
     initMessage = password + "&&" + nickname + '&&' + autojoin
     clientSocket.send(initMessage.encode())
     handshake = clientSocket.recv(1024).decode()
+    newNickname,channel = handshake.split("&&")
+    nickname = newNickname
     if not handshake:
         app.errorBox("Could not connect.")
         return False
