@@ -3,4 +3,21 @@ connecting return server nickname:channel
 client send channel message channel:data
 server send channel message time:channel:user:data
 
-➰
+/join [channel]
+/msg [user] [message]
+/reply [message]
+/ping
+/nick
+/motd #show motd
+/rules
+/list #lists all public channels
+/time
+/version #list server version
+/info #dope irc client created by kyle cornbean and bryron
+/names [channel] #lists users in a specific channel
+/part [channel] #leave a channel
+/kick [channel] [user]
+/oper [login] [password]
+/stats
+/away
+/commands #list all available commands
