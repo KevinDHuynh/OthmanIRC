@@ -5,10 +5,12 @@ myHost = ''  # server machine, '' means local host
 myPort = 6667  # listen on a non-reserved port number
 version = '0.0.1'
 
+# clients[connection] = client
 clients = {}
+# channels[channelName] = channel
 channels = {}
-claimednicknames = []
-
+# claimedusernames = [name1, name2, name3]
+claimedusernames = []
 
 sockobj = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sockobj.bind((myHost, myPort))
@@ -34,36 +36,36 @@ class channel:
 # handles user data and connection
 class client:
 
-    def __init__(self, connection, nickname, autojoin="#general", password = ' '):
+    def __init__(self, connection, username, autojoin="#general", password=' '):
         clients[connection] = self
         self.connection = connection
         self.password = password
-        self.nickname = get_nickname(nickname)
+        self.username = get_username(username)
         self.lastmsgfrom = self
-        claimednicknames.append(self.nickname)
-        #List of Channels the Client is in, contains names of the channel
+        claimedusernames.append(self.username)
+        # List of Channels the Client is in, contains names of the channel
         self.channelsin = []
-        print(client_connect_channel("#general", self))
-        if autojoin !="#general":
+        print(client_connect_channel("#general", connection))
+        if autojoin != "#general":
             client_connect_channel(autojoin, connection, password)
 
     def strchannelsin(self):
         c = ""
         for x in self.channelsin:
-                c = c + x + " "
+            c = c + x + " "
         return c
 
 
 # Connects client to the channel if the password is correct or the server password is ' '
+# Adds client to connectedclients
+# Adds channel to client.channelsin
 def client_connect_channel(channelname, connection, password=' '):
-    client = clients[connection]
+    connectingclient = clients[connection]
     if channelname in channels:
         if channels[channelname].password == password or channels[channelname].password == ' ':
-            channels[channelname].connectedclients[client.connection] = client
-            # client.channel[channelname] = channels[channelname]
-            client.channelsin.append(channelname)
-            connectedmessage = str(client.nickname + "has joined " + channelname)
-            server_send_channelmessage(channelname, "Server", connectedmessage)
+            channels[channelname].connectedclients[connection] = connectingclient
+            connectingclient.channelsin.append(channelname)
+            announce_connected_client(connection, channelname)
             return True
     return False
 
@@ -74,26 +76,33 @@ def client_remove_channel(channelname, client):
     channels[channelname].connectedclients.pop(client)
 
 
+def announce_connected_client(connection, channelname):
+    message = str(channelname + "&&" + "Server&&" + clients[connection].username + " has connected to " + channelname)
+    for c in channels[channelname].connectedclients:
+        if c != connection:
+            c.send(message.encode())
+
+
 # creates client when it first connects
-# data should be in format password:nickname:autojoin
+# data should be in format password:username:autojoin
 def clientFirstConnect(connection, data):
-    password, nickname, autojoin = data.split("&&")
-    client(connection, nickname, autojoin, password)
+    password, username, autojoin = data.split("&&")
+    client(connection, username, autojoin, password)
 
 
 # returns an available nickname
 # if nickname is taken will use get_nickname_num if name is taken and append a number to end of nickname
-def get_nickname(nickname):
-    if nickname in claimednicknames:
-        nickname = get_nickname_num(nickname, 1)
-    return nickname
+def get_username(username):
+    if username in claimedusernames and username != "Server":
+        username = get_username_num(username, 1)
+    return username
 
 
-# used with get_nickname
-def get_nickname_num(nickname, num):
-    name = nickname + str(num)
-    if name in claimednicknames:
-        return get_nickname_num(nickname, num + 1)
+# used with get_username
+def get_username_num(username, num):
+    name = username + str(num)
+    if name in claimedusernames:
+        return get_username_num(username, num + 1)
     return name
 
 
@@ -107,7 +116,7 @@ def server_send_channelmessage(channelname, user, data):
     message = str(channelname + "&&" + user + "&&" + data)
     for connection in clients:
         client = clients[connection]
-        if client.nickname != user:
+        if client.username != user:
             connection.send(message.encode())
 
 
@@ -123,14 +132,15 @@ def join(connection, data):
     except ValueError:
         return client_connect_channel(data, connection)
 
+
 # Sends a msg from connection to user containing message, contained in data
 # Returns true if successfully send, false is otherwise
 def msg(connection, data):
     try:
         user, message = data.split("&&")
-        message = str(clients[connection].nickname) + "&&" + message
+        message = str(clients[connection].username) + "&&" + message
         for x in clients:
-            if x.nickname == user:
+            if x.username == user:
                 x.send(message.encode())
                 x.lastmsgfrom = connection
                 return True
@@ -150,7 +160,7 @@ def reply(connection, data):
 
 
 def ping(connection):
-    print("ping from" + clients[connection].nickname)
+    print("ping from" + clients[connection].username)
     connection.send("pong".encode())
 
 
@@ -158,19 +168,19 @@ def ping(connection):
 
 
 def clientremoved(connection, error="unknown reason"):
-    print(str(clients[connection].nickname) + " removed from server because " + str(error))
+    print(str(clients[connection].username) + " removed from server because " + str(error))
 
 
 def handleClient(connection):
     clientFirstConnect(connection, connection.recv(1024).decode())
     thisclient = clients[connection]
-    connection.send((str(thisclient.nickname) + "&&" + thisclient.strchannelsin()).encode())
-    print(str(thisclient.nickname) + "&&" + str(thisclient.strchannelsin()))
+    connection.send((str(thisclient.username) + "&&" + thisclient.strchannelsin()).encode())
+    print(str(thisclient.username) + "&&" + str(thisclient.strchannelsin()))
 
     while True:
         try:
             data = connection.recv(1024).decode()
-            print("Recieved from " + thisclient.nickname + ":" + data)
+            print("Received from " + thisclient.username + ":" + data)
             header, data = data.split("&&")
             # Checks and uses command from Client
             if header[:1] == '/':
@@ -178,11 +188,11 @@ def handleClient(connection):
                     clientremoved(connection, "closed by client")
                     break
                 elif header == "/join":
-                    connection.send(join(connection, data).encode())
+                    connection.send(str(join(connection, data).encode()))
                 elif header == "/msg":
-                    connection.send(msg(connection, data).encode())
+                    connection.send(str(msg(connection, data).encode()))
                 elif header == "/reply":
-                    connection.send(reply(connection, data).encode())
+                    connection.send(str(reply(connection, data).encode()))
                 elif header == "/ping":
                     ping(connection)
                 else:
@@ -190,7 +200,7 @@ def handleClient(connection):
             # Checks and sends message to channel
             elif header[:1] == '#':
                 if header in thisclient.channelsin:
-                    server_send_channelmessage(header, thisclient.nickname, data)
+                    server_send_channelmessage(header, thisclient.username, data)
                 else:
                     connection.send(str(header + " is an unknown channel").encode())
             else:
