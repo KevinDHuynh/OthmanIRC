@@ -25,6 +25,8 @@ def press(button):
         nickname = app.getEntry("Nickname")
         autojoin = app.getEntry("Autojoin")
         password = app.getEntry("Password")
+        if not serverName:
+            serverName = '127.0.0.1'
         if not serverPort:
             serverport = 6667
         if not nickname:
