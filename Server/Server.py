@@ -35,35 +35,35 @@ class channel:
 class client:
 
     def __init__(self, connection, nickname, autojoin="#general", password = ' '):
+        clients[connection] = self
         self.connection = connection
         self.password = password
         self.nickname = get_nickname(nickname)
         self.lastmsgfrom = self
         claimednicknames.append(self.nickname)
         #List of Channels the Client is in, contains names of the channel
-        self.channelsin = ["#general"]
-        client_connect_channel(channels["#general"], self)
+        self.channelsin = []
+        print(client_connect_channel("#general", self))
         if autojoin !="#general":
             client_connect_channel(autojoin, connection, password)
 
     def strchannelsin(self):
-        c = str(self.channelsin[0])
-
+        c = ""
         for x in self.channelsin:
-            if(x != "#general"):
-                c = c + " " + x
+                c = c + x + " "
         return c
 
 
 # Connects client to the channel if the password is correct or the server password is ' '
-def client_connect_channel(channelname, client, password=' '):
-    print("client connect channel")
+def client_connect_channel(channelname, connection, password=' '):
+    client = clients[connection]
     if channelname in channels:
-        print("channelname in channels")
         if channels[channelname].password == password or channels[channelname].password == ' ':
-            print("Password Match")
             channels[channelname].connectedclients[client.connection] = client
-            client.channel[channelname] = channels[channelname]
+            # client.channel[channelname] = channels[channelname]
+            client.channelsin.append(channelname)
+            connectedmessage = str(client.nickname + "has joined " + channelname)
+            server_send_channelmessage(channelname, "Server", connectedmessage)
             return True
     return False
 
@@ -78,13 +78,12 @@ def client_remove_channel(channelname, client):
 # data should be in format password:nickname:autojoin
 def clientFirstConnect(connection, data):
     password, nickname, autojoin = data.split("&&")
-    clients[connection] = client(connection, nickname, autojoin, password)
+    client(connection, nickname, autojoin, password)
 
 
 # returns an available nickname
 # if nickname is taken will use get_nickname_num if name is taken and append a number to end of nickname
 def get_nickname(nickname):
-    print("test")
     if nickname in claimednicknames:
         nickname = get_nickname_num(nickname, 1)
     return nickname
@@ -93,7 +92,6 @@ def get_nickname(nickname):
 # used with get_nickname
 def get_nickname_num(nickname, num):
     name = nickname + str(num)
-    print(name)
     if name in claimednicknames:
         return get_nickname_num(nickname, num + 1)
     return name
@@ -107,12 +105,10 @@ def user_in_channel(connection, channelname):
 # sends message to all clients in channel from user with time stamp
 def server_send_channelmessage(channelname, user, data):
     message = str(channelname + "&&" + user + "&&" + data)
-    print(channels[channelname].connectedclients)
     for connection in clients:
         client = clients[connection]
         if client.nickname != user:
             connection.send(message.encode())
-    print(message)
 
 
 """Commands from Client"""
@@ -174,7 +170,7 @@ def handleClient(connection):
     while True:
         try:
             data = connection.recv(1024).decode()
-            print(data)
+            print("Recieved from " + thisclient.nickname + ":" + data)
             header, data = data.split("&&")
             # Checks and uses command from Client
             if header[:1] == '/':
@@ -216,4 +212,5 @@ def dispatcher():  # listen until process killed
 
 
 generalChannel = channel("#general", ' ')
+hiddenChannel = channel("#seceret", "1234")
 dispatcher()
