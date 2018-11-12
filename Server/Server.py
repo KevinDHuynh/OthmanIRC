@@ -3,7 +3,8 @@ import socket  # get socket constructor and constants
 
 myHost = ''  # server machine, '' means local host
 myPort = 6667  # listen on a non-reserved port number
-version = '0.0.1'
+version = '0.0.2'
+defaultchannel = "#general"
 
 # clients[connection] = client
 clients = {}
@@ -28,6 +29,7 @@ class channel:
         self.ispublic = False
         if password == ' ':
             self.ispublic = True
+        # connectedclients[connection] = client
         self.connectedclients = {}
         channels[name] = self
 
@@ -36,7 +38,7 @@ class channel:
 # handles user data and connection
 class client:
 
-    def __init__(self, connection, username, autojoin="#general", password=' '):
+    def __init__(self, connection, username, autojoin=defaultchannel, password=' '):
         clients[connection] = self
         self.connection = connection
         self.password = password
@@ -45,8 +47,8 @@ class client:
         claimedusernames.append(self.username)
         # List of Channels the Client is in, contains names of the channel
         self.channelsin = []
-        print(client_connect_channel("#general", connection))
-        if autojoin != "#general":
+        client_connect_channel(defaultchannel, connection)
+        if autojoin != defaultchannel:
             client_connect_channel(autojoin, connection, password)
 
     def strchannelsin(self):
@@ -71,9 +73,9 @@ def client_connect_channel(channelname, connection, password=' '):
 
 
 # removes client from specified channel
-def client_remove_channel(channelname, client):
-    clients[client].channelsin.remove(channelname)
-    channels[channelname].connectedclients.pop(client)
+def client_remove_channel(channelname, connection):
+    clients[connection].channelsin.remove(channelname)
+    channels[channelname].connectedclients.pop(connection)
 
 
 def announce_connected_client(connection, channelname):
@@ -85,7 +87,7 @@ def announce_connected_client(connection, channelname):
 
 # creates client when it first connects
 # data should be in format password:username:autojoin
-def clientFirstConnect(connection, data):
+def client_first_connect(connection, data):
     password, username, autojoin = data.split("&&")
     client(connection, username, autojoin, password)
 
@@ -115,8 +117,8 @@ def user_in_channel(connection, channelname):
 def server_send_channelmessage(channelname, user, data):
     message = str(channelname + "&&" + user + "&&" + data)
     for connection in clients:
-        client = clients[connection]
-        if client.username != user:
+        clientinchannel = clients[connection]
+        if clientinchannel.username != user:
             connection.send(message.encode())
 
 
@@ -167,12 +169,18 @@ def ping(connection):
 """End Commands from Client"""
 
 
-def clientremoved(connection, error="unknown reason"):
-    print(str(clients[connection].username) + " removed from server because " + str(error))
+# Removes client from
+def clientremoved(connection, error="for unknown reason"):
+    print(str(clients[connection].username) + " removed from server " + str(error))
+    # remove client from all connected channels connectedclients list
+    for channelname in clients[connection].channelsin:
+        channels[channelname].connectedclients.pop(connection)
+    claimedusernames.remove(clients[connection].username)
+    clients.pop(connection)
 
 
-def handleClient(connection):
-    clientFirstConnect(connection, connection.recv(1024).decode())
+def handle_client(connection):
+    client_first_connect(connection, connection.recv(1024).decode())
     thisclient = clients[connection]
     connection.send((str(thisclient.username) + "&&" + thisclient.strchannelsin()).encode())
     print(str(thisclient.username) + "&&" + str(thisclient.strchannelsin()))
@@ -188,15 +196,16 @@ def handleClient(connection):
                     clientremoved(connection, "closed by client")
                     break
                 elif header == "/join":
-                    connection.send(str(join(connection, data).encode()))
+                    connection.send(str(join(connection, data)).encode())
                 elif header == "/msg":
-                    connection.send(str(msg(connection, data).encode()))
+                    connection.send(str(msg(connection, data)).encode())
                 elif header == "/reply":
-                    connection.send(str(reply(connection, data).encode()))
+                    connection.send(str(reply(connection, data)).encode())
                 elif header == "/ping":
                     ping(connection)
                 else:
                     connection.send(str(header + " is unknown command").encode())
+
             # Checks and sends message to channel
             elif header[:1] == '#':
                 if header in thisclient.channelsin:
@@ -205,8 +214,9 @@ def handleClient(connection):
                     connection.send(str(header + " is an unknown channel").encode())
             else:
                 connection.send("Unknown Message Format".encode())
+
         except ConnectionResetError:
-            clientremoved(connection, "connection was forcibly closed by the client")
+            clientremoved(connection, "because connection was forcibly closed by the client")
             break
         except ValueError:
             connection.send("Unknown Message Format".encode())
@@ -218,9 +228,9 @@ def handleClient(connection):
 def dispatcher():  # listen until process killed
     while True:  # wait for next connection
         connection, address = sockobj.accept()  # pass to thread for service
-        _thread.start_new(handleClient, (connection,))
+        _thread.start_new(handle_client, (connection,))
 
 
-generalChannel = channel("#general", ' ')
+generalChannel = channel(defaultchannel, ' ')
 hiddenChannel = channel("#seceret", "1234")
 dispatcher()
