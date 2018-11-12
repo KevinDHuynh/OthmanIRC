@@ -193,9 +193,8 @@ def handleClient(connection):
                     connection.send(str(header + " is unknown command").encode())
             # Checks and sends message to channel
             elif header[:1] == '#':
-                for c in thisclient.channelsin:
-                    if c.name == header:
-                        server_send_channelmessage(header, thisclient.nickname, data)
+                if header in thisclient.channelsin:
+                    server_send_channelmessage(header, thisclient.nickname, data)
                 else:
                     connection.send(str(header + " is an unknown channel").encode())
             else:
