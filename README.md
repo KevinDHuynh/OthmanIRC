@@ -1,3 +1,2 @@
-Requires AppJar and IRC libraries
+Requires the AppJar library
 http://appjar.info
-https://pypi.org/project/irc/
