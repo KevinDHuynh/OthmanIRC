@@ -54,7 +54,7 @@ class client:
     def strchannelsin(self):
         c = ""
         for x in self.channelsin:
-            c = c + x + " "
+            c = c + x
         return c
 
 
@@ -167,7 +167,16 @@ def reply(connection, data):
 # sends pong to the client who pinged server
 def ping(connection):
     print("ping from" + clients[connection].username)
-    connection.send("pong".encode())
+    return "pong"
+
+
+# change client name
+def nick(connection, username):
+    claimedusernames.remove(clients[connection].username)
+    newname = get_username(username)
+    claimedusernames.append(newname)
+    clients[connection].username = newname
+    return newname
 
 
 """End Commands from Client"""
@@ -201,13 +210,15 @@ def handle_client(connection):
                     clientremoved(connection, "closed by client")
                     break
                 elif header == "/join":
-                    connection.send(str(join(connection, data)).encode())
+                    connection.send(str("/join&&" + join(connection, data)).encode())
                 elif header == "/msg":
-                    connection.send(str(msg(connection, data)).encode())
+                    connection.send(str("/msg&&" + msg(connection, data)).encode())
                 elif header == "/reply":
-                    connection.send(str(reply(connection, data)).encode())
+                    connection.send(str("/reply&&" + reply(connection, data)).encode())
                 elif header == "/ping":
-                    ping(connection)
+                    connection.send(str("/ping&&" + ping(connection).encode()))
+                elif header == "/nick":
+                    connection.send(str("/nick&&" + nick(connection, data)).encode())
                 else:
                     connection.send(str(header + " is unknown command").encode())
 
