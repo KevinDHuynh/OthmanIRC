@@ -27,4 +27,5 @@ server send channel message channel&&user&&data
 /away
 /commands #list all available commands
 
+whenever the user uses a /command that is sent to server the server will respond with /thatcommand&&something
 If server recieves unknown command will send /server&&[command} is unknown command
