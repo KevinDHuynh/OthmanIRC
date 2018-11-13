@@ -78,6 +78,7 @@ def client_remove_channel(channelname, connection):
     channels[channelname].connectedclients.pop(connection)
 
 
+# announce when user is connected to channel
 def announce_connected_client(connection, channelname):
     message = str(channelname + "&&" + "Server&&" + clients[connection].username + " has connected to " + channelname)
     for c in channels[channelname].connectedclients:
@@ -151,16 +152,19 @@ def msg(connection, data):
     return False
 
 
+# Sends message to the last user to private message you
 def reply(connection, data):
     try:
         if clients[connection].lastmsgfrom in clients:
-            clients[connection].lastmsgfrom.send(data.encode())
+            clients[connection].lastmsgfrom.send(clients[connection].username + "&&" + data.encode())
+            clients[clients[connection].lastmsgfrom].lastmsgfrom = connection
             return True
     except:
         return False
     return False
 
 
+# sends pong to the client who pinged server
 def ping(connection):
     print("ping from" + clients[connection].username)
     connection.send("pong".encode())
@@ -179,6 +183,7 @@ def clientremoved(connection, error="for unknown reason"):
     clients.pop(connection)
 
 
+# Handles the client with the thread
 def handle_client(connection):
     client_first_connect(connection, connection.recv(1024).decode())
     thisclient = clients[connection]
@@ -225,7 +230,8 @@ def handle_client(connection):
     connection.close()
 
 
-def dispatcher():  # listen until process killed
+# listen until process killed
+def dispatcher():
     while True:  # wait for next connection
         connection, address = sockobj.accept()  # pass to thread for service
         _thread.start_new(handle_client, (connection,))
