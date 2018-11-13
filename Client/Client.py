@@ -33,7 +33,7 @@ def press(button):
         if not nickname:
             nickname = 'Guest' + str(random.randint(1000,9999))
         if not serverName:
-            app.errorBox("noServer","No server IP was given.")
+            app.errorBox("noServer", "No server IP was given.")
         else:
             if connect():
                 app.hideSubWindow("Connect")
@@ -116,7 +116,7 @@ def connect():
     receive_thread.start()
     return True
 
-app = gui("OthmanIRC 0.01")
+app = gui("OthmanIRC 0.02")
 app.icon = "icon.gif"
 app.startTabbedFrame("Channels")
 app.startTab("Server")
