@@ -39,6 +39,7 @@ def press(button):
                 app.show()
     else:
         app.stop()
+        clientSocket.close()
 
 def receive():
     """Handles receiving of messages."""
@@ -68,6 +69,7 @@ def send(event=None):  # event is passed by binders.
 def on_closing(event=None):
     """This function is to be called when the window is closed."""
     app.stop()
+    clientSocket.close()
 
 def connect():
     global nickname
