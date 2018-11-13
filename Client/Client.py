@@ -11,6 +11,7 @@ nickname = ''
 autojoin = ''
 password = ''
 my_msg = ''
+last_msg = ''
 clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 def press(button):
@@ -46,10 +47,20 @@ def receive():
     while True:
         try:
             msg = clientSocket.recv(1024).decode("utf8")
-            msgChannel,msgUser,msgData = msg.split("&&")
-            app.addListItem("MessageList", msgUser+": "+msgData)
 
-        except OSError:  # Possibly client has left the chat.
+            if msg.startswith("/msg"):
+                command,user,message = msg.split("&&")
+                app.addListItem("MessageList", "<"+user+" --> " + nickname + "> " + message)
+                global last_msg
+                last_msg = user
+                """/msg&&fromuser&&message"""
+            elif msg.startswith("/ping"):
+                app.addListItem("MessageList", "Pong!")
+            else:
+                msgChannel, msgUser, msgData = msg.split("&&")
+                app.addListItem("MessageList", msgUser+": "+msgData)
+
+        except OSError:
             break
 
 
@@ -57,13 +68,29 @@ def send(event=None):  # event is passed by binders.
     """Handles sending of messages."""
     channel = "#general"
     msg = channel+"&&" +app.getEntry("Entry")
-    app.setEntry("Entry","")
-    channelMsg, msgBody = msg.split("&&")
-    app.addListItem("MessageList", nickname+": " + msgBody)
-    clientSocket.send(msg.encode())
-    if msg == "/quit":
+    if msg.startswith("/quit"):
         clientSocket.close()
         app.quit()
+        return
+    elif msg.startswith("/msg"):
+        command,user,message=msg.split("&&")
+        app.addListItem("MessageList", "<" + nickname + " --> " + user + "> " + message)
+        msg = command+"&&"+user+"&&"+message
+    elif msg.startswith("/reply"):
+        command,message = msg.split("&&")
+        app.addListItem("MessageList", "<" + nickname + " --> " + last_msg + "> " + message)
+        msg = command + "&&" + message
+    else:
+        channelMsg, msgBody = msg.split("&&")
+        app.addListItem("MessageList", nickname+": " + msgBody)
+
+    try:
+        clientSocket.send(msg.encode())
+    except:
+        app.errorBox("Could not send message.")
+
+    app.setEntry("Entry", "")
+
 
 
 def on_closing(event=None):
