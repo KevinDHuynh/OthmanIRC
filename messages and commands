@@ -9,7 +9,7 @@ server send channel message channel&&user&&data
     msg from client:  /msg&&user&&message
     msg from server:  /msg&&fromuser&&message
 /reply [message]
-    msg from client:  /relpy&&message
+    msg from client:  /reply&&message
     msg from server:  /msg&&fromuser&&message
 /ping
 /nick

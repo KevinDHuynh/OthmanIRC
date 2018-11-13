@@ -1,5 +1,4 @@
 Client:
-    When GUI Closes, Close Programm
     Implement Commands
     Implement Channels
 
