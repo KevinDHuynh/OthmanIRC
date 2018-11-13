@@ -1,8 +1,8 @@
 import _thread
 import socket  # get socket constructor and constants
 
-myHost = ''  # server machine, '' means local host
-myPort = 6667  # listen on a non-reserved port number
+myHost = ''
+myPort = 6667
 version = '0.0.2'
 defaultchannel = "#general"
 
@@ -20,7 +20,7 @@ sockobj.listen(10)
 
 # channel class, Name and Password for Channel
 # If password = ' ' a password is not required to join the server
-# handles what users are in the channel and the channel infomation
+# handles what users are in the channel and the channel information
 class channel:
 
     def __init__(self, name, password=' '):
@@ -203,24 +203,26 @@ def handle_client(connection):
         try:
             data = connection.recv(1024).decode()
             print("Received from " + thisclient.username + ":" + data)
-            header, data = data.split("&&")
+            header, data = data.split("&&", 1)
+            print(header)
+            print(data)
             # Checks and uses command from Client
             if header[:1] == '/':
                 if header == "/quit":
                     clientremoved(connection, "closed by client")
                     break
                 elif header == "/join":
-                    connection.send(str("/join&&" + join(connection, data)).encode())
+                    connection.send(("/join&&" + str(join(connection, data))).encode())
                 elif header == "/msg":
-                    connection.send(str("/msg&&" + msg(connection, data)).encode())
+                    connection.send(("/msg&&" + str(msg(connection, data))).encode())
                 elif header == "/reply":
-                    connection.send(str("/reply&&" + reply(connection, data)).encode())
+                    connection.send(("/reply&&" + str(reply(connection, data))).encode())
                 elif header == "/ping":
-                    connection.send(str("/ping&&" + ping(connection).encode()))
+                    connection.send(("/ping&&" + str(ping(connection))).encode())
                 elif header == "/nick":
-                    connection.send(str("/nick&&" + nick(connection, data)).encode())
+                    connection.send(("/nick&&" + str(nick(connection, data))).encode())
                 else:
-                    connection.send(str(header + " is unknown command").encode())
+                    connection.send((header + " is unknown command").encode())
 
             # Checks and sends message to channel
             elif header[:1] == '#':
