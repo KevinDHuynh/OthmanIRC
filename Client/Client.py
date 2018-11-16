@@ -127,7 +127,6 @@ app.addButton("Send", send)
 app.stopTab()
 app.stopTabbedFrame()
 
-
 app.startSubWindow("Connect")
 app.addLabelEntry("Server")
 app.addLabelEntry("Port")
@@ -139,7 +138,5 @@ app.setEntryDefault("Nickname", "guest")
 app.setEntryDefault("Port", "6667")
 app.addButtons(["Connect", "Cancel"], press)
 app.stopSubWindow()
-
-
 
 app.go(startWindow="Connect")
