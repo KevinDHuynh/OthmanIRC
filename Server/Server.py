@@ -13,6 +13,7 @@ channels = {}
 # claimedusernames = [name1, name2, name3]
 claimedusernames = []
 
+# Creates a TCP Server with Port# 6667
 sockobj = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sockobj.bind((myHost, myPort))
 sockobj.listen(10)
@@ -197,15 +198,12 @@ def handle_client(connection):
     client_first_connect(connection, connection.recv(1024).decode())
     thisclient = clients[connection]
     connection.send((str(thisclient.username) + "&&" + thisclient.strchannelsin()).encode())
-    print(str(thisclient.username) + "&&" + str(thisclient.strchannelsin()))
 
     while True:
         try:
             data = connection.recv(1024).decode()
             print("Received from " + thisclient.username + ":" + data)
             header, data = data.split("&&", 1)
-            print(header)
-            print(data)
             # Checks and uses command from Client
             if header[:1] == '/':
                 if header == "/quit":
@@ -232,10 +230,11 @@ def handle_client(connection):
                     connection.send(str(header + " is an unknown channel").encode())
             else:
                 connection.send("Unknown Message Format".encode())
-
+        # Connection Randomly Closed by Client
         except ConnectionResetError:
             clientremoved(connection, "because connection was forcibly closed by the client")
             break
+        # Split function fails
         except ValueError:
             connection.send("Unknown Message Format".encode())
             continue
