@@ -49,9 +49,14 @@ def receive():
     """Handles receiving of messages."""
     while True:
         try:
-            msg = clientSocket.recv(1024).decode("utf8")
-
-            if msg.startswith("/msg"):
+            msg = clientSocket.recv(1024).decode()
+            print(msg+" original")
+            if msg.startswith("/init"):
+                command, user, ch = msg.split("&&")
+                print(ch+" Channel")
+                nickname = user
+                channel(ch)
+            elif msg.startswith("/msg"):
                 command,user,message = msg.split("&&")
                 if user.startswith("False"):
                     app.addListItem("console", "User does not exist.")
@@ -76,6 +81,7 @@ def receive():
                     channel(channelName)
             else:
                 msgChannel, msgUser, msgData = msg.split("&&")
+                msgChannel = msgChannel.replace("#", "")
                 app.addListItem(msgChannel+"List", msgUser+": "+msgData)
 
         except OSError:
@@ -85,8 +91,7 @@ def receive():
 def send(event=None):  # event is passed by binders.
     """Handles sending of messages."""
     """ValueError"""
-    channel = "#general"
-    msg = channel+"&&" +app.getEntry("Entry")
+    msg = app.getTabbedFrameSelectedTab("Channels") + "&&" +app.getEntry("Entry")
     if app.getEntry("Entry").startswith("/quit"):
         clientSocket.close()
         exit(0)
@@ -100,18 +105,26 @@ def send(event=None):  # event is passed by binders.
         app.addListItem("console", "<" + nickname + " --> " + last_msg + "> " + message)
         msg = command + "&&" + message
     elif app.getEntry("Entry").startswith("/join"):
-        command,channel,password = app.getEntry("Entry").split(" ",2)
-        msg = command + "&&" + channel + "&&" + password
+        try:
+            password=" "
+            command,channelstuff,password = app.getEntry("Entry").split(" ")
+        except ValueError:
+            command,channelstuff = app.getEntry("Entry").split(" ")
+        msg = command + "&&" + channelstuff + "&&" + password
+    elif app.getEntry("Entry").startswith("/ping"):
+        msg = "/ping"
     else:
         channelMsg, msgBody = msg.split("&&")
         app.addListItem(channelMsg+"List", nickname +": " + msgBody)
-
     try:
+        print(msg)
         clientSocket.send(msg.encode())
     except:
         app.errorBox("Could not send message.")
 
     app.setEntry("Entry", "")
+
+
 def channel(channelName):
     global channelList
     if channelName in channelList:
@@ -120,7 +133,7 @@ def channel(channelName):
         app.openTabbedFrame("Channels")
         app.startTab(channelName)
         app.addListBox(channelName+"List")
-        app.addListItem(channelName+"List" , "Joined channel")
+        app.addListItem(channelName+"List", "Joined channel")
         app.stopTab()
         app.stopTabbedFrame()
         channelList.append(channelName)
@@ -131,17 +144,8 @@ def connect():
         clientSocket.connect((serverName, serverPort))
     except:
         return False
-    initMessage = password + "&&" + nickname + '&&' + autojoin
+    initMessage = nickname
     clientSocket.send(initMessage.encode())
-    handshake = clientSocket.recv(1024).decode()
-    if not handshake:
-        app.errorBox("Could not connect.")
-        return False
-    print(handshake)
-    newNickname,channelJoin = handshake.split("&&")
-    nickname = newNickname
-
-    channel(channelJoin)
     receive_thread = Thread(target=receive)
     receive_thread.start()
     return True
