@@ -68,15 +68,15 @@ def send(event=None):  # event is passed by binders.
     """Handles sending of messages."""
     channel = "#general"
     msg = channel+"&&" +app.getEntry("Entry")
-    if msg.startswith("/quit"):
+    if app.getEntry("Entry").startswith("/quit"):
         clientSocket.close()
         app.quit()
         return
-    elif msg.startswith("/msg"):
+    elif app.getEntry("Entry").startswith("/msg"):
         command,user,message=msg.split("&&")
         app.addListItem("MessageList", "<" + nickname + " --> " + user + "> " + message)
         msg = command+"&&"+user+"&&"+message
-    elif msg.startswith("/reply"):
+    elif app.getEntry("Entry").startswith("/reply"):
         command,message = msg.split("&&")
         app.addListItem("MessageList", "<" + nickname + " --> " + last_msg + "> " + message)
         msg = command + "&&" + message
@@ -107,6 +107,7 @@ def connect():
     initMessage = password + "&&" + nickname + '&&' + autojoin
     clientSocket.send(initMessage.encode())
     handshake = clientSocket.recv(1024).decode()
+    print(handshake)
     newNickname,channel = handshake.split("&&")
     nickname = newNickname
     if not handshake:
@@ -117,6 +118,7 @@ def connect():
     return True
 
 app = gui("OthmanIRC 0.02")
+app.setSize(1020,780)
 app.icon = "icon.gif"
 app.startTabbedFrame("Channels")
 app.startTab("Server")
