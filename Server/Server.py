@@ -54,7 +54,8 @@ class Client:
     def strchannelsin(self):
         c = ""
         for x in self.channelsin:
-            c = c + x
+            c = c + x + "%%"
+        c = c.stri("%%")
         return c
 
 
@@ -98,6 +99,8 @@ def client_first_connect(connection, data):
 # if nickname is taken will use get_nickname_num if name is taken and append a number to end of nickname
 def get_username(username):
     username = username.replace(" ", "")
+    username = username.replace("#", "")
+
     if username in claimedusernames and username != "Server":
         username = get_username_num(username, 1)
     return username
