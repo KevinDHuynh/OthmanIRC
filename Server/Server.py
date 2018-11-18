@@ -38,18 +38,15 @@ class Channel:
 # handles user data and connection
 class Client:
 
-    def __init__(self, connection, username, autojoin=defaultchannel, password=' '):
+    def __init__(self, connection, username):
         clients[connection] = self
         self.connection = connection
-        self.password = password
         self.username = get_username(username)
         self.lastmsgfrom = self
         claimedusernames.append(self.username)
         # List of Channels the Client is in, contains names of the channel
         self.channelsin = []
         client_connect_channel(defaultchannel, connection)
-        if autojoin != defaultchannel:
-            client_connect_channel(autojoin, connection, password)
 
     def strchannelsin(self):
         c = ""
@@ -90,8 +87,8 @@ def announce_connected_client(connection, channelname):
 # creates client when it first connects
 # data should be in format password:username:autojoin
 def client_first_connect(connection, data):
-    password, username, autojoin = data.split("&&")
-    Client(connection, username, autojoin, password)
+    username = data.split("&&")
+    Client(connection, username)
     print(clients[connection].username + " connected to " + clients[connection].strchannelsin())
 
 
@@ -220,7 +217,7 @@ def clientremoved(connection, error="for unknown reason"):
 def handle_client(connection):
     client_first_connect(connection, connection.recv(1024).decode())
     thisclient = clients[connection]
-    connection.send(("/init&&" + thisclient.username + "&&" + thisclient.strchannelsin()).encode())
+    connection.send(("/init&&" + thisclient.username + "&&" + defaultchannel).encode())
 
     while True:
         try:
@@ -277,4 +274,5 @@ def dispatcher():
 # Creates the general channel
 Channel(defaultchannel, ' ')
 Channel("#seceret", "1234")
+Channel("#support", ' ')
 dispatcher()
