@@ -41,7 +41,7 @@ class Client:
     def __init__(self, connection, username):
         clients[connection] = self
         self.connection = connection
-        self.username = get_username(username)
+        self.username = get_username(str(username))
         self.lastmsgfrom = self
         claimedusernames.append(self.username)
         # List of Channels the Client is in, contains names of the channel
