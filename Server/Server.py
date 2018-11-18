@@ -1,9 +1,9 @@
 import _thread
-import socket  # get socket constructor and constants
+import socket
 
 myHost = ''
 myPort = 6667
-version = '0.0.2'
+version = '0.0.3'
 defaultchannel = "#general"
 
 # clients[connection] = client
@@ -130,14 +130,19 @@ def server_send_channelmessage(channelname, user, data):
 
 
 # adds user to channel in data, if channel has a password it should be in data.
-# returns true if successful, false otherwise
+# returns "True&&" + data if connected (Where data is the channel name)
+# return "False&&Password" if bad password
+# return "False&&" + data if channel doesn't exist (Where data is the channel name)
 def join(connection, data):
+    if not data.startswith("#"):
+        data = "#" + data
     try:
         data, password = data.split("&&")
-        if client_connect_channel(data, connection, password):
-            return "True&&"+data
+        if data in channels:
+            if client_connect_channel(data, connection, password):
+                return "True&&" + data
         else:
-            return "False&&"+data
+            return "False&&Password"
     except ValueError:
         if client_connect_channel(data, connection):
             return "True&&" + data
@@ -146,42 +151,51 @@ def join(connection, data):
 
 
 # Sends a msg from connection to user containing message, contained in data
-# Returns true if successfully send, false is otherwise
+# Returns "True&&" + user if message sent
+# Returns "False&&User" + user + " not found" if user could not be found
+# Returns "False&&Message Format Error" if data is not formatted correctly
 def msg(connection, data):
+    print(data)
     try:
         user, message = data.split("&&")
-        message = str(clients[connection].username) + "&&" + message
+        print(user)
+        print(message)
+
+        message = "/msg&&" + clients[connection].username + "&&" + message
         for x in clients:
-            if x.username == user:
+            if clients[x].username == user:
                 print("User found for msg")
                 x.send(message.encode())
                 x.lastmsgfrom = connection
-                return "True&&"
-    except:
-        return False
+                return "True&&" + user
+    except ValueError:
+        return "False&&Message Format Error"
     print("user not found for msg")
-    return "False&&User" + user + " not found"
+    return "False&&User " + user + " not found"
 
 
 # Sends message to the last user to private message you
+# Returns "True&&" + clients[connection].lastmsgfrom if message sent correctly
+# returns "False&&User " + clients[connection].lastmsgfrom + " not found" if user not found
 def reply(connection, data):
     try:
         if clients[connection].lastmsgfrom in clients:
             clients[connection].lastmsgfrom.send(clients[connection].username + "&&" + data.encode())
             clients[clients[connection].lastmsgfrom].lastmsgfrom = connection
-            return "True&&"
+            return "True&&" + clients[connection].lastmsgfrom
     except:
         return False
-    return "False&&User" + clients[connection].lastmsgfrom + " not found"
+    return "False&&User " + clients[connection].lastmsgfrom + " not found"
 
 
-# sends pong to the client who pinged server
+# Returns "pong"
 def ping(connection):
     print("ping from" + clients[connection].username)
     return "pong"
 
 
 # change client name
+# returns newname
 def nick(connection, username):
     claimedusernames.remove(clients[connection].username)
     newname = get_username(username)
@@ -222,7 +236,7 @@ def handle_client(connection):
                 elif header == "/join":
                     connection.send(("/join&&" + str(join(connection, data))).encode())
                 elif header == "/msg":
-                    print("Recieved Message")
+                    print("Received Message")
                     connection.send(("/msg&&" + str(msg(connection, data))).encode())
                 elif header == "/reply":
                     connection.send(("/reply&&" + str(reply(connection, data))).encode())
@@ -262,6 +276,6 @@ def dispatcher():
 
 
 # Creates the general channel
-generalChannel = channel(defaultchannel, ' ')
-hiddenChannel = channel("#seceret", "1234")
+channel(defaultchannel, ' ')
+channel("#seceret", "1234")
 dispatcher()
