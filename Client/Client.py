@@ -54,29 +54,29 @@ def receive():
             if msg.startswith("/msg"):
                 command,user,message = msg.split("&&")
                 if user.startswith("False"):
-                    app.addListItem("MessageList", "User does not exist.")
+                    app.addListItem("console", "User does not exist.")
                 else:
-                    app.addListItem("MessageList", "<"+user+" --> " + nickname + "> " + message)
+                    app.addListItem("console", "<"+user+" --> " + nickname + "> " + message)
                     global last_msg
                     last_msg = user
                     """/msg&&fromuser&&message"""
             elif msg.startswith("/ping"):
-                app.addListItem("MessageList", "Pong!")
+                app.addListItem("console", "Pong!")
             elif msg.startswith("/nick"):
-                command,newnick = msg.split("&&")
+                command, newnick = msg.split("&&")
                 nickname = newnick
-                app.addListItem("MessageList", "Changed nickname to: "+newnick)
+                app.addListItem("console", "Changed nickname to: "+newnick)
             elif msg.startswith("/join"):
                 command,success,channelName = msg.split("&&")
                 if success == "False":
-                    app.addListItem("MessageList", "Cannot join channel.")
+                    app.addListItem("console", "Cannot join channel.")
                 elif success == "Password":
-                    app.addListItem("MessageList", "Incorrect Password for channel.")
+                    app.addListItem("console", "Incorrect Password for channel.")
                 else:
                     channel(channelName)
             else:
                 msgChannel, msgUser, msgData = msg.split("&&")
-                app.addListItem("MessageList", msgUser+": "+msgData)
+                app.addListItem(msgChannel+"List", msgUser+": "+msgData)
 
         except OSError:
             break
