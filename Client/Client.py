@@ -12,6 +12,7 @@ autojoin = ''
 password = ''
 my_msg = ''
 last_msg = ''
+channelList = {}
 clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 def press(button):
@@ -21,6 +22,7 @@ def press(button):
         global nickname
         global autojoin
         global password
+        global serverPort
         serverName = app.getEntry("Server")
         serverPort = app.getEntry("Port")
         nickname = app.getEntry("Nickname")
@@ -50,12 +52,23 @@ def receive():
 
             if msg.startswith("/msg"):
                 command,user,message = msg.split("&&")
-                app.addListItem("MessageList", "<"+user+" --> " + nickname + "> " + message)
-                global last_msg
-                last_msg = user
-                """/msg&&fromuser&&message"""
+                if user.startswith("False"):
+                    app.addListItem("MessageList", message)
+                else:
+                    app.addListItem("MessageList", "<"+user+" --> " + nickname + "> " + message)
+                    global last_msg
+                    last_msg = user
+                    """/msg&&fromuser&&message"""
             elif msg.startswith("/ping"):
                 app.addListItem("MessageList", "Pong!")
+            elif msg.startswith("/join"):
+                command,success,channelName = msg.split("&&")
+                if success == "False":
+                    app.addListItem("MessageList", "Cannot join channel.")
+                elif success == "Password":
+                    app.addListItem("MessageList", "Incorrect Password for channel.")
+                else:
+                    channel(channelName)
             else:
                 msgChannel, msgUser, msgData = msg.split("&&")
                 app.addListItem("MessageList", msgUser+": "+msgData)
@@ -81,6 +94,9 @@ def send(event=None):  # event is passed by binders.
         command,message = app.getEntry("Entry").split(" ",1)
         app.addListItem("MessageList", "<" + nickname + " --> " + last_msg + "> " + message)
         msg = command + "&&" + message
+    elif app.getEntry("Entry").startswith("/join"):
+        command,channel,password = app.getEntry("Entry").split(" ",2)
+        msg = command + "&&" + channel + "&&" + password
     else:
         channelMsg, msgBody = msg.split("&&")
         app.addListItem("MessageList", nickname +": " + msgBody)
@@ -91,18 +107,19 @@ def send(event=None):  # event is passed by binders.
         app.errorBox("Could not send message.")
 
     app.setEntry("Entry", "")
+def channel(channelName):
+    global channelList
+    if channelName in channelList:
+        app.addListItem("ERROR: Already connected to channel")
+    else:
+        app.openTabbedFrame("Channels")
+        app.startTab(channelName)
+        app.addListBox("MessageList")
 
-
-
-def on_closing(event=None):
-    """This function is to be called when the window is closed."""
-    app.stop()
-    clientSocket.close()
-    exit(0)
 def connect():
     global nickname
     try:
-        clientSocket.connect((serverName, int(serverPort)))
+        clientSocket.connect((serverName, serverPort))
     except:
         return False
     initMessage = password + "&&" + nickname + '&&' + autojoin
@@ -118,6 +135,12 @@ def connect():
     receive_thread.start()
     return True
 
+def on_closing(event=None):
+    """This function is to be called when the window is closed."""
+    app.stop()
+    clientSocket.close()
+    exit(0)
+
 
 app = gui("OthmanIRC 0.03b")
 app.setSize(1020,780)
@@ -125,11 +148,12 @@ app.icon = "icon.gif"
 app.startTabbedFrame("Channels")
 app.startTab("Server")
 app.addListBox("MessageList")
+app.stopTab()
+app.stopTabbedFrame()
+
 app.addLabelEntry("Entry").bind("<Return>", send)
 app.setEntryDefault("Entry","Enter message here.")
 app.addButton("Send", send)
-app.stopTab()
-app.stopTabbedFrame()
 
 app.startSubWindow("Connect")
 app.addLabelEntry("Server")
