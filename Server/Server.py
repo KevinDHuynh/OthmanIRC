@@ -30,7 +30,6 @@ class Channel:
         self.ispublic = False
         if password == ' ':
             self.ispublic = True
-        # connectedclients[connection] = client
         self.connectedclients = {}
         channels[name] = self
 
@@ -218,7 +217,7 @@ def clientremoved(connection, error="for unknown reason"):
 def handle_client(connection):
     client_first_connect(connection, connection.recv(1024).decode())
     thisclient = clients[connection]
-    connection.send((str(thisclient.username) + "&&" + thisclient.strchannelsin()).encode())
+    connection.send(("/init&&" + thisclient.username + "&&" + thisclient.strchannelsin()).encode())
 
     while True:
         try:
