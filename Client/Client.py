@@ -6,13 +6,13 @@ from appJar import gui
 import random
 
 serverName = ''
-serverPort = ''
+serverPort = int(1)
 nickname = ''
 autojoin = ''
 password = ''
 my_msg = ''
 last_msg = ''
-channelList = {}
+channelList = []
 clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 def press(button):
@@ -24,7 +24,7 @@ def press(button):
         global password
         global serverPort
         serverName = app.getEntry("Server")
-        serverPort = app.getEntry("Port")
+        serverPort = 6667
         nickname = app.getEntry("Nickname")
         autojoin = app.getEntry("Autojoin")
         password = app.getEntry("Password")
@@ -45,6 +45,7 @@ def press(button):
         clientSocket.close()
 
 def receive():
+    global nickname
     """Handles receiving of messages."""
     while True:
         try:
@@ -53,7 +54,7 @@ def receive():
             if msg.startswith("/msg"):
                 command,user,message = msg.split("&&")
                 if user.startswith("False"):
-                    app.addListItem("MessageList", message)
+                    app.addListItem("MessageList", "User does not exist.")
                 else:
                     app.addListItem("MessageList", "<"+user+" --> " + nickname + "> " + message)
                     global last_msg
@@ -61,6 +62,10 @@ def receive():
                     """/msg&&fromuser&&message"""
             elif msg.startswith("/ping"):
                 app.addListItem("MessageList", "Pong!")
+            elif msg.startswith("/nick"):
+                command,newnick = msg.split("&&")
+                nickname = newnick
+                app.addListItem("MessageList", "Changed nickname to: "+newnick)
             elif msg.startswith("/join"):
                 command,success,channelName = msg.split("&&")
                 if success == "False":
@@ -88,18 +93,18 @@ def send(event=None):  # event is passed by binders.
         return
     elif app.getEntry("Entry").startswith("/msg"):
         command,user,message=app.getEntry("Entry").split(" ",2)
-        app.addListItem("MessageList", "<" + nickname + " --> " + user + "> " + message)
+        app.addListItem("console", "<" + nickname + " --> " + user + "> " + message)
         msg = command+"&&"+user+"&&"+message
     elif app.getEntry("Entry").startswith("/reply"):
         command,message = app.getEntry("Entry").split(" ",1)
-        app.addListItem("MessageList", "<" + nickname + " --> " + last_msg + "> " + message)
+        app.addListItem("console", "<" + nickname + " --> " + last_msg + "> " + message)
         msg = command + "&&" + message
     elif app.getEntry("Entry").startswith("/join"):
         command,channel,password = app.getEntry("Entry").split(" ",2)
         msg = command + "&&" + channel + "&&" + password
     else:
         channelMsg, msgBody = msg.split("&&")
-        app.addListItem("MessageList", nickname +": " + msgBody)
+        app.addListItem(channelMsg+"List", nickname +": " + msgBody)
 
     try:
         clientSocket.send(msg.encode())
@@ -110,11 +115,15 @@ def send(event=None):  # event is passed by binders.
 def channel(channelName):
     global channelList
     if channelName in channelList:
-        app.addListItem("ERROR: Already connected to channel")
+        app.addListItem("channelList","ERROR: Already connected to channel")
     else:
         app.openTabbedFrame("Channels")
         app.startTab(channelName)
-        app.addListBox("MessageList")
+        app.addListBox(channelName+"List")
+        app.addListItem(channelName+"List" , "Joined channel")
+        app.stopTab()
+        app.stopTabbedFrame()
+        channelList.append(channelName)
 
 def connect():
     global nickname
@@ -125,12 +134,14 @@ def connect():
     initMessage = password + "&&" + nickname + '&&' + autojoin
     clientSocket.send(initMessage.encode())
     handshake = clientSocket.recv(1024).decode()
-    print(handshake)
-    newNickname,channel = handshake.split("&&")
-    nickname = newNickname
     if not handshake:
         app.errorBox("Could not connect.")
         return False
+    print(handshake)
+    newNickname,channelJoin = handshake.split("&&")
+    nickname = newNickname
+
+    channel(channelJoin)
     receive_thread = Thread(target=receive)
     receive_thread.start()
     return True
@@ -146,8 +157,9 @@ app = gui("OthmanIRC 0.03b")
 app.setSize(1020,780)
 app.icon = "icon.gif"
 app.startTabbedFrame("Channels")
-app.startTab("Server")
-app.addListBox("MessageList")
+app.startTab("console")
+app.addListBox("consoleList")
+app.addListItem("consoleList", "Successfully connected to server")
 app.stopTab()
 app.stopTabbedFrame()
 
@@ -163,7 +175,7 @@ app.addLabelEntry("Nickname")
 app.addLabelEntry("Autojoin")
 app.setEntryDefault("Server", "127.0.0.1")
 app.setEntryDefault("Nickname", "guest")
-app.setEntryDefault("Port", "6667")
+app.setEntry("Port", "6667")
 app.addButtons(["Connect", "Cancel"], press)
 app.stopSubWindow()
 
