@@ -83,7 +83,7 @@ def send(event=None):  # event is passed by binders.
         msg = command + "&&" + message
     else:
         channelMsg, msgBody = msg.split("&&")
-        app.addListItem("MessageList", nickname+": " + msgBody)
+        app.addListItem("MessageList", nickname +": " + msgBody)
 
     try:
         clientSocket.send(msg.encode())
@@ -110,7 +110,6 @@ def connect():
     handshake = clientSocket.recv(1024).decode()
     print(handshake)
     newNickname,channel = handshake.split("&&")
-    global nickname
     nickname = newNickname
     if not handshake:
         app.errorBox("Could not connect.")
