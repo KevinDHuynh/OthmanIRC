@@ -71,7 +71,7 @@ def send(event=None):  # event is passed by binders.
     msg = channel+"&&" +app.getEntry("Entry")
     if app.getEntry("Entry").startswith("/quit"):
         clientSocket.close()
-        app.quit()
+        exit(0)
         return
     elif app.getEntry("Entry").startswith("/msg"):
         command,user,message=app.getEntry("Entry").split(" ",2)
@@ -98,7 +98,7 @@ def on_closing(event=None):
     """This function is to be called when the window is closed."""
     app.stop()
     clientSocket.close()
-
+    exit(0)
 def connect():
     global nickname
     try:
@@ -110,6 +110,7 @@ def connect():
     handshake = clientSocket.recv(1024).decode()
     print(handshake)
     newNickname,channel = handshake.split("&&")
+    global nickname
     nickname = newNickname
     if not handshake:
         app.errorBox("Could not connect.")
@@ -118,7 +119,8 @@ def connect():
     receive_thread.start()
     return True
 
-app = gui("OthmanIRC 0.02")
+
+app = gui("OthmanIRC 0.03b")
 app.setSize(1020,780)
 app.icon = "icon.gif"
 app.startTabbedFrame("Channels")
