@@ -55,7 +55,7 @@ class Client:
         c = ""
         for x in self.channelsin:
             c = c + x + "%%"
-        c = c.stri("%%")
+        c = c.strip("%%")
         return c
 
 
