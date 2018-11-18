@@ -97,6 +97,7 @@ def client_first_connect(connection, data):
 # returns an available nickname
 # if nickname is taken will use get_nickname_num if name is taken and append a number to end of nickname
 def get_username(username):
+    username = username.replace(" ", "")
     if username in claimedusernames and username != "Server":
         username = get_username_num(username, 1)
     return username
@@ -231,7 +232,7 @@ def handle_client(connection):
             else:
                 connection.send("Unknown Message Format".encode())
         # Connection Randomly Closed by Client
-        except ConnectionResetError:
+        except ConnectionResetError or ConnectionAbortedError:
             clientremoved(connection, "because connection was forcibly closed by the client")
             break
         # Split function fails
@@ -249,6 +250,7 @@ def dispatcher():
         _thread.start_new(handle_client, (connection,))
 
 
+# Creates the general channel
 generalChannel = channel(defaultchannel, ' ')
 hiddenChannel = channel("#seceret", "1234")
 dispatcher()
