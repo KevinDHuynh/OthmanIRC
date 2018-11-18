@@ -66,6 +66,7 @@ def receive():
 
 def send(event=None):  # event is passed by binders.
     """Handles sending of messages."""
+    """ValueError"""
     channel = "#general"
     msg = channel+"&&" +app.getEntry("Entry")
     if app.getEntry("Entry").startswith("/quit"):
@@ -73,11 +74,11 @@ def send(event=None):  # event is passed by binders.
         app.quit()
         return
     elif app.getEntry("Entry").startswith("/msg"):
-        command,user,message=msg.split("&&")
+        command,user,message=app.getEntry("Entry").split(" ",2)
         app.addListItem("MessageList", "<" + nickname + " --> " + user + "> " + message)
         msg = command+"&&"+user+"&&"+message
     elif app.getEntry("Entry").startswith("/reply"):
-        command,message = msg.split("&&")
+        command,message = app.getEntry("Entry").split(" ",1)
         app.addListItem("MessageList", "<" + nickname + " --> " + last_msg + "> " + message)
         msg = command + "&&" + message
     else:
