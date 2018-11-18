@@ -92,6 +92,7 @@ def announce_connected_client(connection, channelname):
 def client_first_connect(connection, data):
     password, username, autojoin = data.split("&&")
     client(connection, username, autojoin, password)
+    print(clients[connection].username + " connected to " + clients[connection].strchannelsin())
 
 
 # returns an available nickname
@@ -133,9 +134,15 @@ def server_send_channelmessage(channelname, user, data):
 def join(connection, data):
     try:
         data, password = data.split("&&")
-        return client_connect_channel(data, connection, password)
+        if client_connect_channel(data, connection, password):
+            return "True&&"+data
+        else:
+            return "False&&"+data
     except ValueError:
-        return client_connect_channel(data, connection)
+        if client_connect_channel(data, connection):
+            return "True&&" + data
+        else:
+            return "False&&" + data
 
 
 # Sends a msg from connection to user containing message, contained in data
@@ -146,12 +153,14 @@ def msg(connection, data):
         message = str(clients[connection].username) + "&&" + message
         for x in clients:
             if x.username == user:
+                print("User found for msg")
                 x.send(message.encode())
                 x.lastmsgfrom = connection
-                return True
+                return "True&&"
     except:
         return False
-    return False
+    print("user not found for msg")
+    return "False&&User" + user + " not found"
 
 
 # Sends message to the last user to private message you
@@ -160,10 +169,10 @@ def reply(connection, data):
         if clients[connection].lastmsgfrom in clients:
             clients[connection].lastmsgfrom.send(clients[connection].username + "&&" + data.encode())
             clients[clients[connection].lastmsgfrom].lastmsgfrom = connection
-            return True
+            return "True&&"
     except:
         return False
-    return False
+    return "False&&User" + clients[connection].lastmsgfrom + " not found"
 
 
 # sends pong to the client who pinged server
@@ -213,11 +222,13 @@ def handle_client(connection):
                 elif header == "/join":
                     connection.send(("/join&&" + str(join(connection, data))).encode())
                 elif header == "/msg":
+                    print("Recieved Message")
                     connection.send(("/msg&&" + str(msg(connection, data))).encode())
                 elif header == "/reply":
                     connection.send(("/reply&&" + str(reply(connection, data))).encode())
                 elif header == "/ping":
-                    connection.send(("/ping&&" + str(ping(connection))).encode())
+                    ping(connection)
+                    connection.send("/ping".encode())
                 elif header == "/nick":
                     connection.send(("/nick&&" + str(nick(connection, data))).encode())
                 else:
