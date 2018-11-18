@@ -22,7 +22,7 @@ sockobj.listen(10)
 # channel class, Name and Password for Channel
 # If password = ' ' a password is not required to join the server
 # handles what users are in the channel and the channel information
-class channel:
+class Channel:
 
     def __init__(self, name, password=' '):
         self.name = name
@@ -37,7 +37,7 @@ class channel:
 
 # client class
 # handles user data and connection
-class client:
+class Client:
 
     def __init__(self, connection, username, autojoin=defaultchannel, password=' '):
         clients[connection] = self
@@ -91,7 +91,7 @@ def announce_connected_client(connection, channelname):
 # data should be in format password:username:autojoin
 def client_first_connect(connection, data):
     password, username, autojoin = data.split("&&")
-    client(connection, username, autojoin, password)
+    Client(connection, username, autojoin, password)
     print(clients[connection].username + " connected to " + clients[connection].strchannelsin())
 
 
@@ -178,13 +178,10 @@ def msg(connection, data):
 # Returns "True&&" + clients[connection].lastmsgfrom if message sent correctly
 # returns "False&&User " + clients[connection].lastmsgfrom + " not found" if user not found
 def reply(connection, data):
-    try:
-        if clients[connection].lastmsgfrom in clients:
-            clients[connection].lastmsgfrom.send(clients[connection].username + "&&" + data.encode())
-            clients[clients[connection].lastmsgfrom].lastmsgfrom = connection
-            return "True&&" + clients[connection].lastmsgfrom
-    except:
-        return False
+    if clients[connection].lastmsgfrom in clients:
+        clients[connection].lastmsgfrom.send(clients[connection].username + "&&" + data.encode())
+        clients[clients[connection].lastmsgfrom].lastmsgfrom = connection
+        return "True&&" + clients[connection].lastmsgfrom
     return "False&&User " + clients[connection].lastmsgfrom + " not found"
 
 
@@ -276,6 +273,6 @@ def dispatcher():
 
 
 # Creates the general channel
-channel(defaultchannel, ' ')
-channel("#seceret", "1234")
+Channel(defaultchannel, ' ')
+Channel("#seceret", "1234")
 dispatcher()
