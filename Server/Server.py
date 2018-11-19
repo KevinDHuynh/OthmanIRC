@@ -22,7 +22,7 @@ sockobj.listen(10)
 # channel class, Name and Password for Channel
 # If password = ' ' a password is not required to join the server
 # handles what users are in the channel and the channel information
-class channel:
+class Channel:
 
     def __init__(self, name, password=' '):
         self.name = name
@@ -37,20 +37,17 @@ class channel:
 
 # client class
 # handles user data and connection
-class client:
+class Client:
 
-    def __init__(self, connection, username, autojoin=defaultchannel, password=' '):
+    def __init__(self, connection, username):
         clients[connection] = self
         self.connection = connection
-        self.password = password
         self.username = get_username(username)
         self.lastmsgfrom = self
         claimedusernames.append(self.username)
         # List of Channels the Client is in, contains names of the channel
         self.channelsin = []
         client_connect_channel(defaultchannel, connection)
-        if autojoin != defaultchannel:
-            client_connect_channel(autojoin, connection, password)
 
     def strchannelsin(self):
         c = ""
@@ -90,8 +87,7 @@ def announce_connected_client(connection, channelname):
 # creates client when it first connects
 # data should be in format password:username:autojoin
 def client_first_connect(connection, data):
-    password, username, autojoin = data.split("&&")
-    client(connection, username, autojoin, password)
+    Client(connection, data)
     print(clients[connection].username + " connected to " + clients[connection].strchannelsin())
 
 
@@ -178,13 +174,10 @@ def msg(connection, data):
 # Returns "True&&" + clients[connection].lastmsgfrom if message sent correctly
 # returns "False&&User " + clients[connection].lastmsgfrom + " not found" if user not found
 def reply(connection, data):
-    try:
-        if clients[connection].lastmsgfrom in clients:
-            clients[connection].lastmsgfrom.send(clients[connection].username + "&&" + data.encode())
-            clients[clients[connection].lastmsgfrom].lastmsgfrom = connection
-            return "True&&" + clients[connection].lastmsgfrom
-    except:
-        return False
+    if clients[connection].lastmsgfrom in clients:
+        clients[connection].lastmsgfrom.send(clients[connection].username + "&&" + data.encode())
+        clients[clients[connection].lastmsgfrom].lastmsgfrom = connection
+        return "True&&" + clients[connection].lastmsgfrom
     return "False&&User " + clients[connection].lastmsgfrom + " not found"
 
 
@@ -221,7 +214,7 @@ def clientremoved(connection, error="for unknown reason"):
 def handle_client(connection):
     client_first_connect(connection, connection.recv(1024).decode())
     thisclient = clients[connection]
-    connection.send((str(thisclient.username) + "&&" + thisclient.strchannelsin()).encode())
+    connection.send(("/init&&" + str(thisclient.username) + "&&" + thisclient.strchannelsin()).encode())
 
     while True:
         try:
@@ -276,6 +269,6 @@ def dispatcher():
 
 
 # Creates the general channel
-channel(defaultchannel, ' ')
-channel("#seceret", "1234")
+Channel(defaultchannel, ' ')
+Channel("#seceret", "1234")
 dispatcher()
