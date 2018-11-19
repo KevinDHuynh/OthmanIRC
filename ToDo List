@@ -1,6 +1,13 @@
 Client:
-    Implement Commands
-    Implement Channels
+    Complete implementation of commands
+    Complete implementation of channels
+    Add userlist to gui
+    Fix up gui
+    
 
 Server:
     Implement Commands
+    Tweak message syntax
+    Implement Operators
+    Implement Channel/Server arguments
+    Create NiskServ bot
