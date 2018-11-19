@@ -3,8 +3,5 @@
 [Presentation](https://docs.google.com/presentation/d/1xI_9swJwaqFeefrqsMjqlSPmTkB4573S8kpn1x6i1b8/edit?usp=sharing)  
 
 
-[Requires the AppJar library](http://appjar.info)  
-Installed via pip for Python 3
-```sudo pip3 install appjar
-sudo pip3 install appjar --upgrade
-```
+[Utilizes the AppJar library](http://appjar.info)  
+Already included in repository
