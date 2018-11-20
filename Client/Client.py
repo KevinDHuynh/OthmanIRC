@@ -59,9 +59,9 @@ def receive():
             elif msg.startswith("/msg"):
                 command,user,message = msg.split("&&")
                 if user.startswith("False"):
-                    app.addListItem("console", "User does not exist.")
+                    app.addListItem("consoleList", "User does not exist.")
                 else:
-                    app.addListItem("console", "<"+user+" --> " + nickname + "> " + message)
+                    app.addListItem("consoleList", "<"+user+" --> " + nickname + "> " + message)
                     global last_msg
                     last_msg = user
                     """/msg&&fromuser&&message"""
@@ -70,13 +70,13 @@ def receive():
             elif msg.startswith("/nick"):
                 command, newnick = msg.split("&&")
                 nickname = newnick
-                app.addListItem("console", "Changed nickname to: "+newnick)
+                app.addListItem("consoleList", "Changed nickname to: "+newnick)
             elif msg.startswith("/join"):
                 command,success,channelName = msg.split("&&")
                 if success == "False":
-                    app.addListItem("console", "Cannot join channel.")
+                    app.addListItem("consoleList", "Cannot join channel.")
                 elif success == "Password":
-                    app.addListItem("console", "Incorrect Password for channel.")
+                    app.addListItem("consoleList", "Incorrect Password for channel.")
                 else:
                     channel(channelName)
             else:
