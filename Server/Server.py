@@ -13,6 +13,8 @@ channels = {}
 claimedusernames = []
 op_username = "kyle"
 op_password = "cornbean"
+# op_clients = [connection, connection, connection]
+op_clients = []
 # Creates a TCP Server with Port# 6667
 sockobj = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sockobj.bind((myHost, myPort))
@@ -43,6 +45,7 @@ class Client:
         clients[connection] = self
         self.connection = connection
         self.username = get_username(username)
+        self.isop = False
         self.lastmsgfrom = self
         claimedusernames.append(self.username)
         # List of Channels the Client is in, contains names of the channel
@@ -220,6 +223,9 @@ def names(connection, channelname):
     return False
 
 
+# removes connection from channel with channelname if connection is in that channel
+# returns true if was removed
+# returns false if was not removed
 def part(connection, channelname):
     if channelname in clients[connection].username:
         client_remove_channel(connection, channelname)
@@ -228,12 +234,31 @@ def part(connection, channelname):
         return "False"
 
 
+# if data contains the username and password to be an op then change connection to an op
+# return true if changed to op else return false
+def op(connection, data):
+    try:
+        username, password = data.split("&&")
+        if username == op_username and password == op_password:
+            clients[connection].isop = True
+            op_clients.append(connection)
+            return "True"
+        else:
+            return "False"
+    except ValueError:
+        return "False"
+
+
 """End Commands from Client"""
 
 
-# Removes client from
+# Removes client from the server
+# Removes client from the clients list
+# Removes client from all channels that the client has joined
 def clientremoved(connection, error="for unknown reason"):
     print(str(clients[connection].username) + " removed from server " + str(error))
+    if clients[connection].isop:
+        op_clients.remove(connection)
     # remove client from all connected channels connectedclients list
     for channelname in clients[connection].channelsin:
         channels[channelname].connectedclients.pop(connection)
@@ -277,6 +302,8 @@ def handle_client(connection):
                     connection.send(("/names&&" + names(connection, data)).encode())
                 elif header == "/part":
                     connection.send(("/part&&" + part(connection, data)).encode())
+                elif header == "/op":
+                    connection.send(("/op&&" + op(connection, data)).encode())
                 else:
                     connection.send((header + " is unknown command").encode())
 
@@ -291,7 +318,7 @@ def handle_client(connection):
         # Connection Randomly Closed by Client
         except ConnectionResetError or ConnectionAbortedError:
             clientremoved(connection, "because connection was forcibly closed by the client")
-            break
+            return
         # Split function fails
         except ValueError:
             connection.send("Unknown Message Format".encode())
