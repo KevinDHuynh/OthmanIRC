@@ -3,6 +3,7 @@ connecting return server nickname&&channel
 client send channel message channel&&data
 server send channel message channel&&user&&data
 
+implemented:
 /join [channel]
 /join [channel] [password]
 /msg [user] [message]
@@ -13,6 +14,8 @@ server send channel message channel&&user&&data
     msg from server:  /msg&&fromuser&&message
 /ping
 /nick
+
+todo:
 /motd #show motd
 /rules
 /list #lists all public channels
