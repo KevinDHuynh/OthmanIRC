@@ -53,9 +53,10 @@ def receive():
             print(msg+" original")
             if msg.startswith("/init"):
                 command, user, ch = msg.split("&&")
+                msgChannel = ch.replace("#", "")
                 print(ch+" Channel")
                 nickname = user
-                channel(ch)
+                channel(msgChannel)
             elif msg.startswith("/msg"):
                 command,user,message = msg.split("&&")
                 if user.startswith("False"):
@@ -66,7 +67,7 @@ def receive():
                     last_msg = user
                     """/msg&&fromuser&&message"""
             elif msg.startswith("/ping"):
-                app.addListItem("console", "Pong!")
+                app.addListItem("consoleList", "Pong!")
             elif msg.startswith("/nick"):
                 command, newnick = msg.split("&&")
                 nickname = newnick
@@ -82,6 +83,7 @@ def receive():
             else:
                 msgChannel, msgUser, msgData = msg.split("&&")
                 msgChannel = msgChannel.replace("#", "")
+                print(msgChannel+" destination channel")
                 app.addListItem(msgChannel+"List", msgUser+": "+msgData)
 
         except OSError:
@@ -91,37 +93,43 @@ def receive():
 def send(event=None):  # event is passed by binders.
     """Handles sending of messages."""
     """ValueError"""
-    msg = app.getTabbedFrameSelectedTab("Channels") + "&&" +app.getEntry("Entry")
-    if app.getEntry("Entry").startswith("/quit"):
-        clientSocket.close()
-        exit(0)
-        return
-    elif app.getEntry("Entry").startswith("/msg"):
-        command,user,message=app.getEntry("Entry").split(" ",2)
-        app.addListItem("console", "<" + nickname + " --> " + user + "> " + message)
-        msg = command+"&&"+user+"&&"+message
-    elif app.getEntry("Entry").startswith("/reply"):
-        command,message = app.getEntry("Entry").split(" ",1)
-        app.addListItem("console", "<" + nickname + " --> " + last_msg + "> " + message)
-        msg = command + "&&" + message
-    elif app.getEntry("Entry").startswith("/join"):
-        try:
-            password=" "
-            command,channelstuff,password = app.getEntry("Entry").split(" ")
-        except ValueError:
-            command,channelstuff = app.getEntry("Entry").split(" ")
-        msg = command + "&&" + channelstuff + "&&" + password
-    elif app.getEntry("Entry").startswith("/ping"):
-        msg = "/ping"
+    msg = "#"+app.getTabbedFrameSelectedTab("Channels") + "&&" +app.getEntry("Entry")
+    if msg.startswith("#console&&"):
+        if msg.startswith("#console&&/"):
+            if app.getEntry("Entry").startswith("/msg"):
+                command, user, message = app.getEntry("Entry").split(" ", 2)
+                app.addListItem("console", "<" + nickname + " --> " + user + "> " + message)
+                msg = command + "&&" + user + "&&" + message
+            elif app.getEntry("Entry").startswith("/reply"):
+                command, message = app.getEntry("Entry").split(" ", 1)
+                app.addListItem("console", "<" + nickname + " --> " + last_msg + "> " + message)
+                msg = command + "&&" + message
+            elif app.getEntry("Entry").startswith("/join"):
+                try:
+                    password = " "
+                    command, channelstuff, password = app.getEntry("Entry").split(" ")
+                except ValueError:
+                    command, channelstuff = app.getEntry("Entry").split(" ")
+                msg = command + "&&" + channelstuff + "&&" + password
+            elif app.getEntry("Entry").startswith("/quit"):
+                clientSocket.close()
+                app.quit
+                exit(0)
+
+            elif app.getEntry("Entry").startswith("/ping"):
+                msg = "/ping"
+            else:
+                app.addListItem("generalList", "You can only send commands to the console.")
     else:
         channelMsg, msgBody = msg.split("&&")
+        if channelMsg.startswith("#"):
+            channelMsg = channelMsg.replace("#", "")
         app.addListItem(channelMsg+"List", nickname +": " + msgBody)
-    try:
-        print(msg)
-        clientSocket.send(msg.encode())
-    except:
-        app.errorBox("Could not send message.")
-
+        try:
+            print(msg)
+            clientSocket.send(msg.encode())
+        except:
+            app.errorBox("Could not send message.")
     app.setEntry("Entry", "")
 
 
@@ -151,7 +159,6 @@ def connect():
     return True
 
 def on_closing(event=None):
-    """This function is to be called when the window is closed."""
     app.stop()
     clientSocket.close()
     exit(0)
