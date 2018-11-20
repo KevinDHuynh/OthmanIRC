@@ -5,7 +5,6 @@ myHost = ''
 myPort = 6667
 version = '0.0.3'
 defaultchannel = "#general"
-
 # clients[connection] = client
 clients = {}
 # channels[channelName] = channel
@@ -197,6 +196,29 @@ def nick(connection, username):
     return newname
 
 
+# lists all public servers (servers without password)
+# returns #defaultChannel, #publicChannel ..... , #publicChannel
+def list_public_channels():
+    channel_list = defaultchannel
+    for x in channels:
+        if channels[x].ispublic and not x == defaultchannel:
+            channel_list = channel_list + ", " + x
+    return channel_list
+
+
+# if connection is in the channel then return list of all names in channel
+# returns "clientsusername, username, username..., username"
+# if connection is not in the channel then return "False"
+def names(connection, channelname):
+    list_of_names = clients[connection].username
+    if channelname in clients[connection].channelsin:
+        for name in channels[channelname].connectedclients:
+            if name not in clients[connection].username:
+                list_of_names = list_of_names + ", " + name
+        return list_of_names
+    return False
+
+
 """End Commands from Client"""
 
 
@@ -238,6 +260,12 @@ def handle_client(connection):
                     connection.send("/ping".encode())
                 elif header == "/nick":
                     connection.send(("/nick&&" + str(nick(connection, data))).encode())
+                elif header == "/list":
+                    connection.send(("/list&&" + list_public_channels()).encode())
+                elif header == "/version":
+                    connection.send(("/version&&" + version).encode())
+                elif header == "/names":
+                    connection.send(("/names&&" + names(connection, data)).encode())
                 else:
                     connection.send((header + " is unknown command").encode())
 
@@ -269,6 +297,8 @@ def dispatcher():
 
 
 # Creates the general channel
-Channel(defaultchannel, ' ')
+Channel(defaultchannel)
 Channel("#seceret", "1234")
+Channel("#test")
+
 dispatcher()
