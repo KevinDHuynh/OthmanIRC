@@ -11,7 +11,8 @@ clients = {}
 channels = {}
 # claimedusernames = [name1, name2, name3]
 claimedusernames = []
-
+op_username = "kyle"
+op_password = "cornbean"
 # Creates a TCP Server with Port# 6667
 sockobj = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sockobj.bind((myHost, myPort))
@@ -70,7 +71,7 @@ def client_connect_channel(channelname, connection, password=' '):
 
 
 # removes client from specified channel
-def client_remove_channel(channelname, connection):
+def client_remove_channel(connection, channelname):
     clients[connection].channelsin.remove(channelname)
     channels[channelname].connectedclients.pop(connection)
 
@@ -212,11 +213,19 @@ def list_public_channels():
 def names(connection, channelname):
     list_of_names = clients[connection].username
     if channelname in clients[connection].channelsin:
-        for name in channels[channelname].connectedclients:
-            if name not in clients[connection].username:
-                list_of_names = list_of_names + ", " + name
+        for client_connection in channels[channelname].connectedclients:
+            if not clients[client_connection].username == clients[connection].username:
+                list_of_names = list_of_names + ", " + clients[client_connection].username
         return list_of_names
     return False
+
+
+def part(connection, channelname):
+    if channelname in clients[connection].username:
+        client_remove_channel(connection, channelname)
+        return "True"
+    else:
+        return "False"
 
 
 """End Commands from Client"""
@@ -266,6 +275,8 @@ def handle_client(connection):
                     connection.send(("/version&&" + version).encode())
                 elif header == "/names":
                     connection.send(("/names&&" + names(connection, data)).encode())
+                elif header == "/part":
+                    connection.send(("/part&&" + part(connection, data)).encode())
                 else:
                     connection.send((header + " is unknown command").encode())
 
@@ -298,7 +309,7 @@ def dispatcher():
 
 # Creates the general channel
 Channel(defaultchannel)
-Channel("#seceret", "1234")
+Channel("#secret", "1234")
 Channel("#test")
 
 dispatcher()
