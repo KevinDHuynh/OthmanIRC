@@ -202,7 +202,7 @@ def ping(connection):
 
 
 # change client name
-# returns newname
+# returns newusername
 def nick(connection, username):
     claimedusernames.remove(clients[connection].username)
     newname = get_username(username)
@@ -211,13 +211,19 @@ def nick(connection, username):
     return newname
 
 
-# lists all public servers (servers without password)
+# lists all public servers if client is not op (servers without password)
 # returns #defaultChannel, #publicChannel ..... , #publicChannel
-def list_public_channels():
+# if client is op returns all servers with their passwords
+# returns #defaultChannel, #publicChannel, #privateChannel[Password].....
+def list_channels(connection):
     channel_list = defaultchannel
     for x in channels:
-        if channels[x].ispublic and not x == defaultchannel:
+        if channels[x].ispublic and not x == defaultchannel and not clients[connection].isop:
             channel_list = channel_list + ", " + x
+        if clients[connection].isop and not x == defaultchannel:
+            channel_list = channel_list + ", " + x
+            if not channels[x].ispublic:
+                channel_list = channel_list + "[" + channels[x].password + "]"
     return channel_list
 
 
@@ -249,6 +255,8 @@ def part(connection, channelname):
 # return true if changed to op else return false
 def oper(connection, data):
     try:
+        if clients[connection].isop:
+            return "Already Op"
         username, password = data.split("&&")
         if username == op_username and password == op_password:
             clients[connection].isop = True
@@ -339,11 +347,11 @@ def handle_client(connection):
                 elif header == "/reply":
                     message = "/reply&&" + reply(connection, data)
                 elif header == "/ping":
-                    message = ping(connection)
+                    message = "/ping&&" + ping(connection)
                 elif header == "/nick":
                     message = "/nick&&" + nick(connection, data)
                 elif header == "/list":
-                    message = "/list&&" + list_public_channels()
+                    message = "/list&&" + list_channels(connection)
                 elif header == "/version":
                     message = "/version&&" + version
                 elif header == "/names":
