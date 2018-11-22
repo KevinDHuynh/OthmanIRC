@@ -3,7 +3,7 @@ import socket
 import time
 import datetime
 
-myHost = ''
+myHost = 'localhost'
 myPort = 6667
 version = '0.0.3'
 
@@ -27,6 +27,8 @@ op_clients = []
 sockobj = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sockobj.bind((myHost, myPort))
 sockobj.listen(10)
+
+print("Server established with Port:" + str(myPort))
 
 
 # channel class, Name and Password for Channel
@@ -169,22 +171,16 @@ def join(connection, data):
 # Returns "False&&User" + user + " not found" if user could not be found
 # Returns "False&&Message Format Error" if data is not formatted correctly
 def msg(connection, data):
-    print(data)
     try:
         user, message = data.split("&&")
-        print(user)
-        print(message)
-
         message = "/msg&&" + clients[connection].username + "&&" + message
         for x in clients:
             if clients[x].username == user:
-                print("User found for msg")
                 x.send(message.encode())
                 x.lastmsgfrom = connection
                 return "True&&" + user
     except ValueError:
         return "False&&Message Format Error"
-    print("user not found for msg")
     return "False&&User " + user + " not found"
 
 
@@ -337,35 +333,35 @@ def handle_client(connection):
                     clientremoved(connection, "closed by client")
                     break
                 elif header == "/join":
-                    connection.send(("/join&&" + str(join(connection, data))).encode())
+                    message = "/join&&" + join(connection, data)
                 elif header == "/msg":
-                    print("Received Message")
-                    connection.send(("/msg&&" + str(msg(connection, data))).encode())
+                    message = "/msg&&" + msg(connection, data)
                 elif header == "/reply":
-                    connection.send(("/reply&&" + str(reply(connection, data))).encode())
+                    message = "/reply&&" + reply(connection, data)
                 elif header == "/ping":
-                    ping(connection)
-                    connection.send("/ping".encode())
+                    message = ping(connection)
                 elif header == "/nick":
-                    connection.send(("/nick&&" + str(nick(connection, data))).encode())
+                    message = "/nick&&" + nick(connection, data)
                 elif header == "/list":
-                    connection.send(("/list&&" + list_public_channels()).encode())
+                    message = "/list&&" + list_public_channels()
                 elif header == "/version":
-                    connection.send(("/version&&" + version).encode())
+                    message = "/version&&" + version
                 elif header == "/names":
-                    connection.send(("/names&&" + names(connection, data)).encode())
+                    message = "/names&&" + names(connection, data)
                 elif header == "/part":
-                    connection.send(("/part&&" + part(connection, data)).encode())
+                    message = "/part&&" + part(connection, data)
                 elif header == "/oper":
-                    connection.send(("/oper&&" + oper(connection, data)).encode())
+                    message = "/oper&&" + oper(connection, data)
                 elif header == "/kick":
-                    connection.send(("/kick&&" + kick(connection, data)).encode())
+                    message = "/kick&&" + kick(connection, data)
                 elif header == "/commands":
-                    connection.send(("/commands&&" + commands(connection)).encode())
+                    message = "/commands&&" + commands(connection)
                 elif header == "/stats":
-                    connection.send(("/stats&&" + stats()).encode())
+                    message = "/stats&&" + stats()
                 else:
-                    connection.send(("/server" + header + " is unknown command").encode())
+                    message = "/server" + header + " is unknown command"
+                print("Sending " + message + " to " + thisclient.username)
+                connection.send(message.encode())
 
             # Checks and sends message to channel
             elif header[:1] == '#':
