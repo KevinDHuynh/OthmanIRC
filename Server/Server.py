@@ -140,6 +140,7 @@ def server_send_channelmessage(channelname, user, data):
 # returns "True&&" + data if connected (Where data is the channel name)
 # return "False&&Password" if bad password
 # return "False&&" + data if channel doesn't exist (Where data is the channel name)
+# if channel does not exist and the client is op then creates a channel and adds op to it
 def join(connection, data):
     if not data.startswith("#"):
         data = "#" + data
@@ -148,8 +149,14 @@ def join(connection, data):
         if data in channels:
             if client_connect_channel(data, connection, password):
                 return "True&&" + data
+            else:
+                return "False&&Password"
         else:
-            return "False&&Password"
+            if not clients[connection].isop:
+                return "False&&" + data + " does not exist"
+            Channel(data, password)
+            return "Created&&" + join(connection, data + "&&" + password)
+
     except ValueError:
         if client_connect_channel(data, connection):
             return "True&&" + data
@@ -244,7 +251,7 @@ def part(connection, channelname):
 
 # if data contains the username and password to be an op then change connection to an op
 # return true if changed to op else return false
-def op(connection, data):
+def oper(connection, data):
     try:
         username, password = data.split("&&")
         if username == op_username and password == op_password:
@@ -257,6 +264,12 @@ def op(connection, data):
         return "False"
 
 
+# attempts to kick user from a channel
+# returns False&&Permission Denied if user is not op
+# returns False&&Channel not found if no such channel exists
+# returns False&&user not in channel if user is not in channel
+# returns False&&Unknown Message Format if the split command failed
+# returns True&& user removed from channel if the user was successful removed from the channel
 def kick(connection, data):
     try:
         channelname, user = data.split("&&")
@@ -267,6 +280,7 @@ def kick(connection, data):
         for c in channels[channelname].clientsconnected:
             if clients[c].username == user:
                 client_remove_channel(c, channelname)
+                clients[c].send(("/part&&" + str(part(clients[c], channelname))).encode())
                 return "True&&" + clients[c].username + "removed from " + channels[channelname].name
         return "False&&" + user + " not in " + channelname
 
@@ -283,6 +297,7 @@ def commands(connection):
         return '/quit, /join, /msg, /reply, /ping, /nick, /list, /version, /names, /part, /op, /commands'
 
 
+# returns how long the server has been up and how many clients have been connected
 def stats():
     timeup = str(datetime.timedelta(seconds=(time.time() - start_time)))
     return "Server has seen up for" + timeup + " with " + str(len(clients)) + "connected clients"
@@ -341,8 +356,8 @@ def handle_client(connection):
                     connection.send(("/names&&" + names(connection, data)).encode())
                 elif header == "/part":
                     connection.send(("/part&&" + part(connection, data)).encode())
-                elif header == "/op":
-                    connection.send(("/op&&" + op(connection, data)).encode())
+                elif header == "/oper":
+                    connection.send(("/oper&&" + oper(connection, data)).encode())
                 elif header == "/kick":
                     connection.send(("/kick&&" + kick(connection, data)).encode())
                 elif header == "/commands":
