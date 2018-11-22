@@ -5,29 +5,36 @@ server send channel message channel&&user&&data
 
 implemented:
 /join [channel]
+    Sent from client: /join&&channel
+    See below for server responses
 /join [channel] [password]
+    Sent from client: /join&&channel
+    Sent from server:
+        Joined Channel: /join&&True&&channel
+        Channel does not exist: /join&&False&&Channel does not exist
+        Bad Password: /join&&False&&Bad Password
+        If channel does not exist and the user is op then will create new channel and add the client to it
+            /join&&Create&&True&&channel
 /msg [user] [message]
-    msg from client:  /msg&&user&&message
-    msg from server:  /msg&&fromuser&&message
+    Sent from client:  /msg&&user&&message
+    Sent from server:  /msg&&fromuser&&message
 /reply [message]
-    msg from client:  /reply&&message
-    msg from server:  /msg&&fromuser&&message
 /ping
-/nick
+/nick [nickname]
+    Sent from client: /nick&&nickname
+    Sent from server: /nick&&newnickname
 
 todo:
-/motd #show motd
-/rules
 /list #lists all public channels
-/time
 /version #list server version
-/info #dope irc client created by kyle cornbean and bryron
 /names [channel] #lists users in a specific channel
 /part [channel] #leave a channel
 /kick [channel] [user]
+    Permission Denied: /kick&&False&&Permission Denied
+    Channel not Found: /kick&&False&&Channel not Found
+    User not in Channel: /kick&&False&&
 /oper [login] [password]
 /stats
-/away
 /commands #list all available commands
 
 whenever the user uses a /command that is sent to server the server will respond with /thatcommand&&something
