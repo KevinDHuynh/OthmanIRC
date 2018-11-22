@@ -1,20 +1,28 @@
 import _thread
 import socket
+import time
+import datetime
 
 myHost = ''
 myPort = 6667
 version = '0.0.3'
+
+start_time = time.time()
+
 defaultchannel = "#general"
 # clients[connection] = client
+
 clients = {}
 # channels[channelName] = channel
 channels = {}
 # claimedusernames = [name1, name2, name3]
 claimedusernames = []
+
 op_username = "kyle"
 op_password = "cornbean"
 # op_clients = [connection, connection, connection]
 op_clients = []
+
 # Creates a TCP Server with Port# 6667
 sockobj = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sockobj.bind((myHost, myPort))
@@ -249,6 +257,37 @@ def op(connection, data):
         return "False"
 
 
+def kick(connection, data):
+    try:
+        channelname, user = data.split("&&")
+        if not clients[connection].isop:
+            return "False&&Permission Denied"
+        if channelname not in channels:
+            return "False&&Channel not Found"
+        for c in channels[channelname].clientsconnected:
+            if clients[c].username == user:
+                client_remove_channel(c, channelname)
+                return "True&&" + clients[c].username + "removed from " + channels[channelname].name
+        return "False&&" + user + " not in " + channelname
+
+    except ValueError:
+        return "False&&Unknown Message Format"
+
+
+# checks if sender is op
+# returns a list of available commands
+def commands(connection):
+    if clients[connection].isop:
+        return '/quit, /join, /msg, /reply, /ping, /nick, /list, /version, /names, /part, /op, /kick, /commands'
+    else:
+        return '/quit, /join, /msg, /reply, /ping, /nick, /list, /version, /names, /part, /op, /commands'
+
+
+def stats():
+    timeup = str(datetime.timedelta(seconds=(time.time() - start_time)))
+    return "Server has seen up for" + timeup + " with " + str(len(clients)) + "connected clients"
+
+
 """End Commands from Client"""
 
 
@@ -304,8 +343,14 @@ def handle_client(connection):
                     connection.send(("/part&&" + part(connection, data)).encode())
                 elif header == "/op":
                     connection.send(("/op&&" + op(connection, data)).encode())
+                elif header == "/kick":
+                    connection.send(("/kick&&" + kick(connection, data)).encode())
+                elif header == "/commands":
+                    connection.send(("/commands&&" + commands(connection)).encode())
+                elif header == "/stats":
+                    connection.send(("/stats&&" + stats()).encode())
                 else:
-                    connection.send((header + " is unknown command").encode())
+                    connection.send(("/server" + header + " is unknown command").encode())
 
             # Checks and sends message to channel
             elif header[:1] == '#':
