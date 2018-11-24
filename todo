@@ -1,13 +1,11 @@
 Client:
-    Fix up implementation of channels
-    Complete implementation of channels
+    add remaining commands
     Add userlist to gui
     Fix up gui
+    debug
     
 
 Server:
-    Implement Commands
-    Tweak message syntax
-    Implement Operators
-    Implement Channel/Server arguments
-    Create NiskServ bot
+    check operators
+
+    debug
