@@ -65,8 +65,15 @@ def receive():
                     app.addListItem("consoleList", "<"+user+"> " + message)
                     global last_msg
                     last_msg = user
-                    """/msg&&fromuser&&message"""
-            elif msg.startswith("/ping"):
+            elif msg.startswith("/reply"):
+                try:
+                    command, user, message = msg.split("&&")
+                except:
+                    command,message = msg.split("&&")
+                if user:
+                    app.addListItem("consoleList", message)
+                else:
+                    app.addListItem("consoleList", "<" + nickname + " --> " + last_msg + "> " + message)
                 app.addListItem("consoleList", "Pong!")
             elif msg.startswith("/nick"):
                 command, newnick = msg.split("&&")
@@ -172,7 +179,7 @@ def on_closing(event=None):
     clientSocket.close()
     exit(0)
 
-app = gui("OthmanIRC 0.03b")
+app = gui("OthmanIRC 0.04")
 app.setSize(1020,780)
 app.icon = "icon.gif"
 
