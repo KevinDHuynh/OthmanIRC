@@ -40,6 +40,11 @@ implemented by server:
     /commands
     /stats
 
+implemented by client:
+    /msg
+    /ping
+    /nick
+    /join
 todo:
 /list #lists all public channels
 /version #list server version
