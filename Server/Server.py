@@ -138,11 +138,12 @@ def server_send_channelmessage(channelname, user, data):
 """Commands from Client"""
 
 
-# adds user to channel in data, if channel has a password it should be in data.
-# returns "True&&" + data if connected (Where data is the channel name)
-# return "False&&Password" if bad password
-# return "False&&" + data if channel doesn't exist (Where data is the channel name)
-# if channel does not exist and the client is op then creates a channel and adds op to it
+# adds user to channel in data, data should be channel or channel&&password
+# Joined Channel: True&&[channel]
+# Channel does not exist: False&&[channel] does not exist
+# Bad Password: False&&Bad Password
+# If channel does not exist and the user is op then will create new channel and add the user to it
+#   Create&&True&&[channel]
 def join(connection, data):
     if not data.startswith("#"):
         data = "#" + data
@@ -166,10 +167,11 @@ def join(connection, data):
             return "False&&" + data
 
 
-# Sends a msg from connection to user containing message, contained in data
-# Returns "True&&" + user if message sent
-# Returns "False&&User" + user + " not found" if user could not be found
-# Returns "False&&Message Format Error" if data is not formatted correctly
+# Sends a msg from connection to user containing message, data should be user&&message
+# Message sent: True&&[user]
+# User not found: False User [user] not found
+# Message format error: False&&Message Format Error
+# Message sent to receiver: /msg&&username&&[message]
 def msg(connection, data):
     try:
         user, message = data.split("&&")
@@ -185,9 +187,13 @@ def msg(connection, data):
 
 
 # Sends message to the last user to private message you
-# Returns "True&&" + clients[connection].lastmsgfrom if message sent correctly
-# returns "False&&User " + clients[connection].lastmsgfrom + " not found" if user not found
+# Successfully sent: usersentto
+# Client hasn't received any messages: False&&No messages received
+# User disconnected: False&&[user] not found
+# Message sent to receiver: /msg&&username&&[message]
 def reply(connection, data):
+    if clients[connection].lastmsgfrom == connection:
+        return "False&&No messages received"
     if clients[connection].lastmsgfrom in clients:
         clients[connection].lastmsgfrom.send(clients[connection].username + "&&" + data.encode())
         clients[clients[connection].lastmsgfrom].lastmsgfrom = connection
@@ -228,52 +234,56 @@ def list_channels(connection):
 
 
 # if connection is in the channel then return list of all names in channel
-# returns "clientsusername, username, username..., username"
-# if connection is not in the channel then return "False"
+# Success: clientsusername, username, username..., username"
+# Not in channel: False&&Not in [channel]
 def names(connection, channelname):
     list_of_names = clients[connection].username
     if channelname in clients[connection].channelsin:
         for client_connection in channels[channelname].connectedclients:
             if not clients[client_connection].username == clients[connection].username:
                 list_of_names = list_of_names + ", " + clients[client_connection].username
-        return list_of_names
-    return False
+        return "True&&list_of_names"
+    return "False&&Not in " + channelname
 
 
 # removes connection from channel with channelname if connection is in that channel
-# returns true if was removed
-# returns false if was not removed
+# Success: /part&&True&&[channel]
+# User not in channel: /part&&False&&Not in [channel]
 def part(connection, channelname):
     if channelname in clients[connection].username:
         client_remove_channel(connection, channelname)
-        return "True"
+        return "True&&" + channelname
     else:
-        return "False"
+        return "False&&Not in " + channelname
 
 
 # if data contains the username and password to be an op then change connection to an op
-# return true if changed to op else return false
+# Data should be username&&password
+# Already op: /oper&&False&&Already op
+# Success: /oper&&True&&Now op
+# Op denied: /false&&Op denied
+# Unknown Message Format: /oper&&False&&Unknown Message Format
 def oper(connection, data):
     try:
         if clients[connection].isop:
-            return "Already Op"
+            return "False&&Already op"
         username, password = data.split("&&")
         if username == op_username and password == op_password:
             clients[connection].isop = True
             op_clients.append(connection)
-            return "True"
+            return "True&&Now op"
         else:
-            return "False"
+            return "False&&Op denied"
     except ValueError:
-        return "False"
+        return "False&&Unknown Message Format"
 
 
 # attempts to kick user from a channel
-# returns False&&Permission Denied if user is not op
-# returns False&&Channel not found if no such channel exists
-# returns False&&user not in channel if user is not in channel
-# returns False&&Unknown Message Format if the split command failed
-# returns True&& user removed from channel if the user was successful removed from the channel
+# Permission Denied: /kick&&False&&Permission Denied
+# Channel not Found: /kick&&False&&[channel] not Found
+# User not in Channel: /kick&&False&&[user] not in [channel]
+# Success: /kick&&True&&[username] removed from [channel]
+# Unknown Message Format: /kick&&False&&Unknown Message Format
 def kick(connection, data):
     try:
         channelname, user = data.split("&&")
@@ -293,7 +303,7 @@ def kick(connection, data):
 
 
 # checks if sender is op
-# returns a list of available commands
+# returns /commands&&/command1, /command2, /command3, ect.
 def commands(connection):
     if clients[connection].isop:
         return '/quit, /join, /msg, /reply, /ping, /nick, /list, /version, /names, /part, /op, /kick, /commands'
@@ -301,7 +311,7 @@ def commands(connection):
         return '/quit, /join, /msg, /reply, /ping, /nick, /list, /version, /names, /part, /op, /commands'
 
 
-# returns how long the server has been up and how many clients have been connected
+# returns stats about the server
 def stats():
     timeup = str(datetime.timedelta(seconds=(time.time() - start_time)))
     return "Server has seen up for" + timeup + " with " + str(len(clients)) + "connected clients"
@@ -362,8 +372,8 @@ def handle_client(connection):
                     message = "/oper&&" + oper(connection, data)
                 elif header == "/kick":
                     message = "/kick&&" + kick(connection, data)
-                elif header == "/commands":
-                    message = "/commands&&" + commands(connection)
+                elif header == "/commands" or header == "/help":
+                    message = header + "&&" + commands(connection)
                 elif header == "/stats":
                     message = "/stats&&" + stats()
                 else:

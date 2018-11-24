@@ -25,7 +25,7 @@ implemented:
 /reply [message]
     Sent from client: /reply&&[message]
     Sent from server:
-        Successfully sent /reply&&usersentto
+        Successfully sent: /reply&&usersentto
         Client hasn't received any messages: /reply&&False&&No messages received
         User disconnected: /reply&&False&&[user] not found
     Message sent to receiver: /msg&&username&&[message]
@@ -71,8 +71,10 @@ todo:
         Success: /names&&clientsusername, username, username..., username"
         Not in channel: /names&&False&&Not in [channel]
 /part [channel] #leave a channel
-    Sent from client: /part&&True&&[channel]
-    Sent from server: /part&&False&&Not in [channel]
+    Sent from client: /part&&[channel]
+    Sent from server:
+        Success: /part&&True&&[channel]
+        User not in channel: /part&&False&&Not in [channel]
 /kick [channel] [user]
     Sent from client: /kick&&[channel]&&[user]
     Sent from server:
