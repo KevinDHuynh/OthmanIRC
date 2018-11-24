@@ -5,21 +5,33 @@ server send channel message channel&&user&&data
 
 implemented:
 /join [channel]
-    Sent from client: /join&&channel
+    Sent from client: /join&&[channel]
     See below for server responses
 /join [channel] [password]
-    Sent from client: /join&&channel
+    Sent from client: /join&&[channel]&&[password]
     Sent from server:
-        Joined Channel: /join&&True&&channel
-        Channel does not exist: /join&&False&&Channel does not exist
+        Joined Channel: /join&&True&&[channel]
+        Channel does not exist: /join&&False&&[channel] does not exist
         Bad Password: /join&&False&&Bad Password
-        If channel does not exist and the user is op then will create new channel and add the client to it
-            /join&&Create&&True&&channel
+        If channel does not exist and the user is op then will create new channel and add the user to it
+            /join&&Create&&True&&[channel]
 /msg [user] [message]
-    Sent from client:  /msg&&user&&message
-    Sent from server:  /msg&&fromuser&&message
+    Sent from client:  /msg&&[user]&&[message]
+    Sent from server:
+        Message sent: /msg&&True&&[user]
+        User not found: /msg&&False User [user] not found
+        Message format error: /msg&&False&&Message Format Error
+    Message sent to receiver: /msg&&username&&[message]
 /reply [message]
+    Sent from client: /reply&&[message]
+    Sent from server:
+        Successfully sent /reply&&usersentto
+        Client hasn't received any messages: /reply&&False&&No messages received
+        User disconnected: /reply&&False&&[user] not found
+    Message sent to receiver: /msg&&username&&[message]
 /ping
+    Sent from client: /ping&&
+    Sent frp, server: /ping&&pong
 /nick [nickname]
     Sent from client: /nick&&nickname
     Sent from server: /nick&&newnickname
@@ -45,18 +57,43 @@ implemented by client:
     /ping
     /nick
     /join
+
 todo:
 /list #lists all public channels
+    Sent from client: /list&&
+    Sent from server: /list&&#defaultChannel, #publicChannel, #privateChannel[Password].....
 /version #list server version
+    Sent from client: /version&&
+    Sent from server: /version&&versionOfServer
 /names [channel] #lists users in a specific channel
+    Sent from client: /names&&[channel]
+    Sent from server:
+        Success: /names&&clientsusername, username, username..., username"
+        Not in channel: /names&&False&&Not in [channel]
 /part [channel] #leave a channel
+    Sent from client: /part&&True&&[channel]
+    Sent from server: /part&&False&&Not in [channel]
 /kick [channel] [user]
-    Permission Denied: /kick&&False&&Permission Denied
-    Channel not Found: /kick&&False&&Channel not Found
-    User not in Channel: /kick&&False&&
+    Sent from client: /kick&&[channel]&&[user]
+    Sent from server:
+        Permission Denied: /kick&&False&&Permission Denied
+        Channel not Found: /kick&&False&&[channel] not Found
+        User not in Channel: /kick&&False&&[user] not in [channel]
+        Success: /kick&&True&&[username] removed from [channel]
+        Unknown Message Format: /kick&&False&&Unknown Message Format
 /oper [login] [password]
+    Sent from client: /oper&&[login]&&[password]
+    Sent from server:
+        Already op: /oper&&False&&Already op
+        Success: /oper&&True&&Now op
+        Op denied: /false&&Op denied
+        Unknown Message Format: /oper&&False&&Unknown Message Format
 /stats
-/commands #list all available commands
+    Sent from client: /stats&&
+    Sent from server: /stats&&stats about the server
+/commands or /help#list all available commands
+    Sent from client: /commands&&
+    Sent from server: /commands&&/command1, /command2, /command3, ect.
 
 whenever the user uses a /command that is sent to server the server will respond with /thatcommand&&something
-If server recieves unknown command will send /server&&[command} is unknown command
+If server receives unknown command will send /server&&[command} is unknown command
