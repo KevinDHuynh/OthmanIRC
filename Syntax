@@ -24,6 +24,22 @@ implemented:
     Sent from client: /nick&&nickname
     Sent from server: /nick&&newnickname
 
+implemented by server:
+    /quit
+    /join
+    /msg
+    /reply
+    /ping
+    /nick
+    /list
+    /version
+    /names
+    /part
+    /oper
+    /kick
+    /commands
+    /stats
+
 todo:
 /list #lists all public channels
 /version #list server version

@@ -118,7 +118,7 @@ def send(event=None):  # event is passed by binders.
         elif app.getEntry("Entry").startswith("/help") or app.getEntry("Entry").startswith("/commands"):
             msg = "/commands"
         elif app.getEntry("Entry").startswith("/ping"):
-            msg = "/ping"
+            msg = "/ping&&"
         elif app.getEntry("Entry").startswith("/quit"):
             clientSocket.close()
             app.quit()
