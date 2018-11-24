@@ -80,6 +80,8 @@ def receive():
                     app.addListItem("consoleList", "Incorrect Password for channel.")
                 else:
                     channel(channelName)
+            elif msg.startswith("Unknown Message Format"):
+                app.addListItem("consoleList","Command not recognized by server.")
             else:
                 msgChannel, msgUser, msgData = msg.split("&&")
                 msgChannel = msgChannel.replace("#", "")
@@ -94,42 +96,46 @@ def send(event=None):  # event is passed by binders.
     """Handles sending of messages."""
     """ValueError"""
     msg = "#"+app.getTabbedFrameSelectedTab("Channels") + "&&" +app.getEntry("Entry")
-    if msg.startswith("#console&&"):
-        if msg.startswith("#console&&/"):
-            if app.getEntry("Entry").startswith("/msg"):
-                command, user, message = app.getEntry("Entry").split(" ", 2)
-                app.addListItem("console", "<" + nickname + " --> " + user + "> " + message)
-                msg = command + "&&" + user + "&&" + message
-            elif app.getEntry("Entry").startswith("/reply"):
-                command, message = app.getEntry("Entry").split(" ", 1)
-                app.addListItem("console", "<" + nickname + " --> " + last_msg + "> " + message)
-                msg = command + "&&" + message
-            elif app.getEntry("Entry").startswith("/join"):
-                try:
-                    password = " "
-                    command, channelstuff, password = app.getEntry("Entry").split(" ")
-                except ValueError:
-                    command, channelstuff = app.getEntry("Entry").split(" ")
-                msg = command + "&&" + channelstuff + "&&" + password
-            elif app.getEntry("Entry").startswith("/quit"):
-                clientSocket.close()
-                app.quit
-                exit(0)
+    if msg.startswith("#console&&") or app.getEntry("Entry").startswith("/"):
+        print(app.getEntry("Entry")+" CONSOLE")
+        if app.getEntry("Entry").startswith("/msg"):
+            command, user, message = app.getEntry("Entry").split(" ", 2)
+            app.addListItem("console", "<" + nickname + " --> " + user + "> " + message)
+            msg = command + "&&" + user + "&&" + message
+        elif app.getEntry("Entry").startswith("/reply"):
+            command, message = app.getEntry("Entry").split(" ", 1)
+            app.addListItem("console", "<" + nickname + " --> " + last_msg + "> " + message)
+            msg = command + "&&" + message
+        elif app.getEntry("Entry").startswith("/join"):
+            try:
+                password = " "
+                command, channelstuff, password = app.getEntry("Entry").split(" ")
+            except ValueError:
+                command, channelstuff = app.getEntry("Entry").split(" ")
+            if not channelstuff.startswith("#"):
+                channelstuff = "#"+channelstuff
+            msg = command + "&&" + channelstuff + "&&" + password
+        elif app.getEntry("Entry").startswith("/help"):
+            msg = "/help"
+        elif app.getEntry("Entry").startswith("/ping"):
+            msg = "/ping"
+        elif app.getEntry("Entry").startswith("/quit"):
+            clientSocket.close()
+            app.quit
+            exit(0)
+        else:
+            app.addListItem("consoleList", "Command not recognized by client.")
 
-            elif app.getEntry("Entry").startswith("/ping"):
-                msg = "/ping"
-            else:
-                app.addListItem("generalList", "You can only send commands to the console.")
     else:
         channelMsg, msgBody = msg.split("&&")
         if channelMsg.startswith("#"):
-            channelMsg = channelMsg.replace("#", "")
+            channelMsg = channelMsg.replace("#","")
         app.addListItem(channelMsg+"List", nickname +": " + msgBody)
-        try:
-            print(msg)
-            clientSocket.send(msg.encode())
-        except:
-            app.errorBox("Could not send message.")
+    try:
+        print(msg)
+        clientSocket.send(msg.encode())
+    except:
+        app.errorBox("Could not send message.")
     app.setEntry("Entry", "")
 
 
@@ -138,6 +144,8 @@ def channel(channelName):
     if channelName in channelList:
         app.addListItem("channelList","ERROR: Already connected to channel")
     else:
+        if channelName.startswith("#"):
+            channelName = channelName.replace("#", "")
         app.openTabbedFrame("Channels")
         app.startTab(channelName)
         app.addListBox(channelName+"List")
@@ -159,14 +167,13 @@ def connect():
     return True
 
 def on_closing(event=None):
-    app.stop()
     clientSocket.close()
     exit(0)
-
 
 app = gui("OthmanIRC 0.03b")
 app.setSize(1020,780)
 app.icon = "icon.gif"
+
 app.startTabbedFrame("Channels")
 app.startTab("console")
 app.addListBox("consoleList")
@@ -191,3 +198,4 @@ app.addButtons(["Connect", "Cancel"], press)
 app.stopSubWindow()
 
 app.go(startWindow="Connect")
+app.setStopFunction(on_closing())
