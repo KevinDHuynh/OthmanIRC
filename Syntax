@@ -27,7 +27,7 @@ implemented:
     Sent from server:
         Successfully sent: /reply&&usersentto
         Client hasn't received any messages: /reply&&False&&No messages received
-        User disconnected: /reply&&False&&[user] not found
+        User disconnected: /reply&&False&&User not found
     Message sent to receiver: /msg&&username&&[message]
 /ping
     Sent from client: /ping&&

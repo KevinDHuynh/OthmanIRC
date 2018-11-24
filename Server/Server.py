@@ -179,7 +179,7 @@ def msg(connection, data):
         for x in clients:
             if clients[x].username == user:
                 x.send(message.encode())
-                x.lastmsgfrom = connection
+                clients[x].lastmsgfrom = connection
                 return "True&&" + user
     except ValueError:
         return "False&&Message Format Error"
@@ -189,16 +189,16 @@ def msg(connection, data):
 # Sends message to the last user to private message you
 # Successfully sent: usersentto
 # Client hasn't received any messages: False&&No messages received
-# User disconnected: False&&[user] not found
+# User disconnected: False&&User not found
 # Message sent to receiver: /msg&&username&&[message]
 def reply(connection, data):
     if clients[connection].lastmsgfrom == connection:
         return "False&&No messages received"
     if clients[connection].lastmsgfrom in clients:
-        clients[connection].lastmsgfrom.send(clients[connection].username + "&&" + data.encode())
+        clients[connection].lastmsgfrom.send(("/msg&&" + clients[connection].username + "&&" + data).encode())
         clients[clients[connection].lastmsgfrom].lastmsgfrom = connection
-        return "True&&" + clients[connection].lastmsgfrom
-    return "False&&User " + clients[connection].lastmsgfrom + " not found"
+        return "True&&" + clients[clients[connection].lastmsgfrom].username
+    return "False&&User not found"
 
 
 # Returns "pong"
