@@ -251,6 +251,8 @@ def channel(channelName):
 
 def connect():
     global nickname
+    global autojoin
+    global password
     try:
         clientSocket.connect((serverName, serverPort))
     except:
@@ -259,6 +261,12 @@ def connect():
     clientSocket.send(initMessage.encode())
     receive_thread = Thread(target=receive)
     receive_thread.start()
+    if autojoin:
+        if password:
+            app.setEntry("Entry", "/join "+autojoin+" "+password)
+        else:
+            app.setEntry("Entry", "/join "+autojoin+" "+password)
+        send()
     return True
 
 
@@ -285,9 +293,9 @@ app.addButton("Send", send)
 app.startSubWindow("Connect")
 app.addLabelEntry("Server")
 app.addLabelEntry("Port")
-app.addLabelSecretEntry("Password")
 app.addLabelEntry("Nickname")
 app.addLabelEntry("Autojoin")
+app.addLabelSecretEntry("Password")
 app.setEntryDefault("Server", "127.0.0.1")
 app.setEntryDefault("Nickname", "guest")
 app.setEntry("Port", "6667")
