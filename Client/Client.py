@@ -65,8 +65,15 @@ def receive():
                     app.addListItem("consoleList", "<"+user+"> " + message)
                     global last_msg
                     last_msg = user
-                    """/msg&&fromuser&&message"""
-            elif msg.startswith("/ping"):
+            elif msg.startswith("/reply"):
+                try:
+                    command, user, message = msg.split("&&")
+                except:
+                    command,message = msg.split("&&")
+                if user:
+                    app.addListItem("consoleList", message)
+                else:
+                    app.addListItem("consoleList", "<" + nickname + " --> " + last_msg + "> " + message)
                 app.addListItem("consoleList", "Pong!")
             elif msg.startswith("/nick"):
                 command, newnick = msg.split("&&")
@@ -94,39 +101,11 @@ def receive():
 
 def send(event=None):  # event is passed by binders.
     """Handles sending of messages."""
-    """ValueError"""
     msg = "#"+app.getTabbedFrameSelectedTab("Channels") + "&&" +app.getEntry("Entry")
+
     if msg.startswith("#console&&") or app.getEntry("Entry").startswith("/"):
         print(app.getEntry("Entry")+" CONSOLE")
-        if app.getEntry("Entry").startswith("/msg"):
-            command, user, message = app.getEntry("Entry").split(" ", 2)
-            app.addListItem("consoleList", "<" + nickname + " --> " + user + "> " + message)
-            msg = command + "&&" + user + "&&" + message
-        elif app.getEntry("Entry").startswith("/reply"):
-            command, message = app.getEntry("Entry").split(" ", 1)
-            app.addListItem("consoleList", "<" + nickname + " --> " + last_msg + "> " + message)
-            msg = command + "&&" + message
-        elif app.getEntry("Entry").startswith("/join"):
-            try:
-                password = " "
-                command, channelstuff, password = app.getEntry("Entry").split(" ")
-            except ValueError:
-                command, channelstuff = app.getEntry("Entry").split(" ")
-            if not channelstuff.startswith("#"):
-                channelstuff = "#"+channelstuff
-            msg = command + "&&" + channelstuff + "&&" + password
-        elif app.getEntry("Entry").startswith("/help") or app.getEntry("Entry").startswith("/commands"):
-            msg = "/commands"
-        elif app.getEntry("Entry").startswith("/ping"):
-            msg = "/ping&&"
-        elif app.getEntry("Entry").startswith("/quit"):
-            clientSocket.close()
-            app.quit()
-            exit(0)
-        else:
-            app.addListItem("consoleList", "Command not recognized by client.")
-            msg= None
-
+        msg = commandsend()
     else:
         channelMsg, msgBody = msg.split("&&")
         if channelMsg.startswith("#"):
@@ -139,6 +118,77 @@ def send(event=None):  # event is passed by binders.
     except:
         app.errorBox("Could not send message.")
     app.setEntry("Entry", "")
+
+
+def commandsend():
+
+    if app.getEntry("Entry").startswith("/msg"):
+        command, user, message = app.getEntry("Entry").split(" ", 2)
+        app.addListItem("consoleList", "<" + nickname + " --> " + user + "> " + message)
+        msg = command + "&&" + user + "&&" + message
+    elif app.getEntry("Entry").startswith("/reply"):
+        command, message = app.getEntry("Entry").split(" ", 1)
+        app.addListItem("consoleList", "<" + nickname + " --> " + last_msg + "> " + message)
+        msg = command + "&&" + message
+    elif app.getEntry("Entry").startswith("/join"):
+        channelPassword = " "
+        try:
+            command, channelstuff, channelPassword = app.getEntry("Entry").split(" ")
+        except ValueError:
+            command, channelstuff = app.getEntry("Entry").split(" ")
+        if not channelstuff.startswith("#"):
+            channelstuff = "#" + channelstuff
+        msg = command + "&&" + channelstuff + "&&" + channelPassword
+    elif app.getEntry("Entry").startswith("/oper") or app.getEntry("Entry").startswith("/op"):
+        try:
+            command, user, password = app.getEntry("Entry").split("&&")
+            msg = command + "&&" + user + "&&" + password
+        except ValueError:
+            msg = None
+    elif app.getEntry("Entry").startswith("/kick"):
+        try:
+            command, channel, user = app.getEntry("Entry").split("&&")
+            if not channel.startswith("#"):
+                channel = "#" + channel
+            msg = command + "&&" + channel + "&&" + user
+        except ValueError:
+            app.addListItem(app.getTabbedFrameSelectedTab("Channels") + "List",
+                            "Correct syntax is /kick [channel] [user]")
+            msg = None
+    elif app.getEntry("Entry").startswith("/part"):
+        try:
+            command, channel = app.getEntry("Entry").split("&&")
+        except ValueError:
+            app.addListItem(app.getTabbedFrameSelectedTab("Channels") + "List",
+                            "Please specify a channel name.")
+            msg = None
+    elif app.getEntry("Entry").startswith("/names"):
+        try:
+            command, channel = app.getEntry("Entry").split("&&")
+            if channel.startswith("#"):
+                msg = "/names&&" + channel
+            else:
+                msg = "/names&&#" + channel
+        except ValueError:
+            msg = "/names&&#general"
+    elif app.getEntry("Entry").startswith("/version"):
+        msg = "/version&&"
+    elif app.getEntry("Entry").startswith("/list"):
+        msg = "/list&&"
+    elif app.getEntry("Entry").startswith("/help") or app.getEntry("Entry").startswith("/commands"):
+        msg = "/commands"
+    elif app.getEntry("Entry").startswith("/ping"):
+        msg = "/ping&&"
+    elif app.getEntry("Entry").startswith("/stats"):
+        msg = "/stats&&"
+    elif app.getEntry("Entry").startswith("/quit"):
+        clientSocket.close()
+        app.quit()
+        exit(0)
+    else:
+        app.addListItem("consoleList", "Command not recognized by client.")
+        msg = None
+    return msg
 
 
 def channel(channelName):
@@ -156,6 +206,7 @@ def channel(channelName):
         app.stopTabbedFrame()
         channelList.append(channelName)
 
+
 def connect():
     global nickname
     try:
@@ -168,11 +219,13 @@ def connect():
     receive_thread.start()
     return True
 
+
 def on_closing(event=None):
     clientSocket.close()
     exit(0)
 
-app = gui("OthmanIRC 0.03b")
+
+app = gui("OthmanIRC 0.04")
 app.setSize(1020,780)
 app.icon = "icon.gif"
 
