@@ -103,6 +103,8 @@ def receive():
             elif msg.startswith("/part"):
                 command, bool, message = msg.split("&&")
                 if bool == "True":
+                    if message.startswith("#"):
+                        message = message.replace("#","")
                     app.setTabbedFrameDisabledTab("Channels", message, disabled=True)
                     app.addListItem(app.getTabbedFrameSelectedTab("Channels") + "List", "Successfully Left "+message)
                 else:
@@ -131,7 +133,7 @@ def receive():
             break
 
 
-def send(event=None):  # event is passed by binders.
+def send():  # event is passed by binders.
     """Handles sending of messages."""
     msg = "#"+app.getTabbedFrameSelectedTab("Channels") + "&&" +app.getEntry("Entry")
 
