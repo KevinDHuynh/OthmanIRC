@@ -5,13 +5,12 @@ import datetime
 
 myHost = 'localhost'
 myPort = 6667
-version = '0.0.3'
+version = '0.0.8'
 
 start_time = time.time()
-
 defaultchannel = "#general"
-# clients[connection] = client
 
+# clients[connection] = client
 clients = {}
 # channels[channelName] = channel
 channels = {}
@@ -119,11 +118,6 @@ def get_username_num(username, num):
     if name in claimedusernames:
         return get_username_num(username, num + 1)
     return name
-
-
-# return true if user is in channel, false if otherwise
-def user_in_channel(connection, channelname):
-    return channelname in clients[connection].channelsin
 
 
 # sends message to all clients in channel from user with time stamp
@@ -377,7 +371,7 @@ def handle_client(connection):
                 elif header == "/stats":
                     message = "/stats&&" + stats()
                 else:
-                    message = "/server" + header + " is unknown command"
+                    message = "/server&&" + header + " is unknown command"
                 print("Sending " + message + " to " + thisclient.username)
                 connection.send(message.encode())
 
@@ -390,7 +384,7 @@ def handle_client(connection):
             else:
                 connection.send("Unknown Message Format".encode())
         # Connection Randomly Closed by Client
-        except ConnectionResetError or ConnectionAbortedError:
+        except (ConnectionResetError, ConnectionAbortedError):
             clientremoved(connection, "because connection was forcibly closed by the client")
             return
         # Split function fails
