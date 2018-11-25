@@ -12,6 +12,7 @@ autojoin = ''
 password = ''
 my_msg = ''
 last_msg = ''
+last_command = ''
 channelList = []
 clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -28,7 +29,7 @@ def press(button):
         serverPort = 6667
         nickname = app.getEntry("Nickname")
         autojoin = app.getEntry("Autojoin")
-        password = app.getEntry("Password")
+        password = app.getEntry("Autojoin Password")
         if not serverName:
             serverName = '127.0.0.1'
         if not serverPort:
@@ -133,7 +134,9 @@ def receive():
             break
 
 
-def send(event=None):  # event is passed by binders.
+def send(event=None):
+    global last_command
+    # event is passed by binders.
     """Handles sending of messages."""
     msg = "#"+app.getTabbedFrameSelectedTab("Channels") + "&&" +app.getEntry("Entry")
 
@@ -151,6 +154,7 @@ def send(event=None):  # event is passed by binders.
             clientSocket.send(msg.encode())
     except:
         app.errorBox("Could not send message.")
+    last_command = app.getEntry("Entry")
     app.setEntry("Entry", "")
 
 
@@ -270,6 +274,11 @@ def connect():
     return True
 
 
+def lastMessage():
+    global last_command
+    app.setEntry("Entry", last_command)
+
+
 def on_closing(event=None):
     clientSocket.close()
     exit(0)
@@ -287,6 +296,7 @@ app.stopTab()
 app.stopTabbedFrame()
 
 app.addLabelEntry("Entry").bind("<Return>", send)
+app.bindKey("<Up>", lastMessage)
 app.setEntryDefault("Entry","Enter message here.")
 app.addButton("Send", send)
 
@@ -295,7 +305,7 @@ app.addLabelEntry("Server")
 app.addLabelEntry("Port")
 app.addLabelEntry("Nickname")
 app.addLabelEntry("Autojoin")
-app.addLabelSecretEntry("Password")
+app.addLabelSecretEntry("Autojoin Password")
 app.setEntryDefault("Server", "127.0.0.1")
 app.setEntryDefault("Nickname", "guest")
 app.setEntry("Port", "6667")
