@@ -287,11 +287,10 @@ def kick(connection, data):
             return "False&&Permission Denied"
         if channelname not in channels:
             return "False&&Channel not Found"
-        for c in channels[channelname].clientsconnected:
+        for c in channels[channelname].connectedclients:
             if clients[c].username == user:
-                client_remove_channel(c, channelname)
-                clients[c].send(("/part&&" + str(part(clients[c], channelname))).encode())
-                return "True&&" + clients[c].username + "removed from " + channels[channelname].name
+                c.send(("/part&&" + str(part(c, channelname))).encode())
+                return "True&&" + clients[c].username + " removed from " + channels[channelname].name
         return "False&&" + user + " not in " + channelname
 
     except ValueError:
