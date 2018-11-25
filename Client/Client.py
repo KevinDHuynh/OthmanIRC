@@ -15,6 +15,7 @@ last_msg = ''
 channelList = []
 clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
+
 def press(button):
     if button == "Connect":
         global serverName
@@ -44,6 +45,7 @@ def press(button):
         app.stop()
         clientSocket.close()
 
+
 def receive():
     global nickname
     """Handles receiving of messages."""
@@ -60,33 +62,63 @@ def receive():
             elif msg.startswith("/msg"):
                 command,user,message = msg.split("&&")
                 if user.startswith("False"):
-                    app.addListItem("consoleList", "User does not exist.")
+                    app.addListItem(app.getTabbedFrameSelectedTab("Channels")+"List", "User does not exist.")
                 else:
-                    app.addListItem("consoleList", "<"+user+"> " + message)
+                    app.addListItem(app.getTabbedFrameSelectedTab("Channels")+"List", "<"+user+"> " + message)
                     global last_msg
                     last_msg = user
             elif msg.startswith("/reply"):
+
                 try:
                     command, user, message = msg.split("&&")
-                except:
+                except ValueError:
                     command,message = msg.split("&&")
                 if user:
                     app.addListItem("consoleList", message)
                 else:
                     app.addListItem("consoleList", "<" + nickname + " --> " + last_msg + "> " + message)
-                app.addListItem("consoleList", "Pong!")
             elif msg.startswith("/nick"):
                 command, newnick = msg.split("&&")
                 nickname = newnick
-                app.addListItem("consoleList", "Changed nickname to: "+newnick)
+                app.addListItem(app.getTabbedFrameSelectedTab("Channels")+"List", "Changed nickname to: "+newnick)
             elif msg.startswith("/join"):
                 command,success,channelName = msg.split("&&")
                 if success == "False":
-                    app.addListItem("consoleList", "Cannot join channel.")
+                    app.addListItem(app.getTabbedFrameSelectedTab("Channels")+"List", "Cannot join channel.")
                 elif success == "Password":
-                    app.addListItem("consoleList", "Incorrect Password for channel.")
+                    app.addListItem(app.getTabbedFrameSelectedTab("Channels")+"List", "Incorrect Password for channel.")
                 else:
                     channel(channelName)
+            elif msg.startswith("/ping"):
+                app.addListItem(app.getTabbedFrameSelectedTab("Channels")+"List", "Pong!")
+            elif msg.startswith("/list"):
+                command, channelList = msg.split("&&")
+                app.addListItem(app.getTabbedFrameSelectedTab("Channels")+"List",channelList)
+            elif msg.startswith("/version"):
+                command, version = msg.split("&&")
+                app.addListItem(app.getTabbedFrameSelectedTab("Channels") + "List", version)
+            elif msg.startswith("/names"):
+                command, nameList = msg.split("&&")
+                app.addListItem(app.getTabbedFrameSelectedTab("Channels") + "List", nameList)
+            elif msg.startswith("/part"):
+                command, bool, message = msg.split("&&")
+                if bool == "True":
+                    app.setTabbedFrameDisabledTab("Channels", message, disabled=True)
+                    app.addListItem(app.getTabbedFrameSelectedTab("Channels") + "List", "Successfully Left "+message)
+                else:
+                    app.addListItem(app.getTabbedFrameSelectedTab("Channels") + "List", message)
+            elif msg.startswith("/kick"):
+                command, bool, message = msg.split("&&")
+                app.addListItem(app.getTabbedFrameSelectedTab("Channels") + "List", message)
+            elif msg.startswith("/commands"):
+                command, commandList = msg.split("&&")
+                app.addListItem(app.getTabbedFrameSelectedTab("Channels") + "List", commandList)
+            elif msg.startswith("/stats"):
+                command, stats = msg.split("&&")
+                app.addListItem(app.getTabbedFrameSelectedTab("Channels") + "List", stats)
+            elif msg.startswith("/oper"):
+                command, boolean, message = msg.split("&&")
+                app.addListItem(app.getTabbedFrameSelectedTab("Channels") + "List", message)
             elif msg.startswith("Unknown Message Format"):
                 app.addListItem("consoleList","Command not recognized by server.")
             else:
@@ -139,15 +171,22 @@ def commandsend():
         if not channelstuff.startswith("#"):
             channelstuff = "#" + channelstuff
         msg = command + "&&" + channelstuff + "&&" + channelPassword
+    elif app.getEntry("Entry").startswith("/nick"):
+        try:
+            command, nick = app.getEntry("Entry").split(" ")
+            msg = command+"&&"+nick
+        except ValueError:
+            app.addListItem(app.getTabbedFrameSelectedTab("Channels") + "List",
+                            "Please supply a nickname")
     elif app.getEntry("Entry").startswith("/oper") or app.getEntry("Entry").startswith("/op"):
         try:
-            command, user, password = app.getEntry("Entry").split("&&")
+            command, user, password = app.getEntry("Entry").split(" ")
             msg = command + "&&" + user + "&&" + password
         except ValueError:
             msg = None
     elif app.getEntry("Entry").startswith("/kick"):
         try:
-            command, channel, user = app.getEntry("Entry").split("&&")
+            command, channel, user = app.getEntry("Entry").split(" ")
             if not channel.startswith("#"):
                 channel = "#" + channel
             msg = command + "&&" + channel + "&&" + user
@@ -157,14 +196,14 @@ def commandsend():
             msg = None
     elif app.getEntry("Entry").startswith("/part"):
         try:
-            command, channel = app.getEntry("Entry").split("&&")
+            command, channel = app.getEntry("Entry").split(" ")
         except ValueError:
             app.addListItem(app.getTabbedFrameSelectedTab("Channels") + "List",
                             "Please specify a channel name.")
             msg = None
     elif app.getEntry("Entry").startswith("/names"):
         try:
-            command, channel = app.getEntry("Entry").split("&&")
+            command, channel = app.getEntry("Entry").split(" ")
             if channel.startswith("#"):
                 msg = "/names&&" + channel
             else:
@@ -176,7 +215,7 @@ def commandsend():
     elif app.getEntry("Entry").startswith("/list"):
         msg = "/list&&"
     elif app.getEntry("Entry").startswith("/help") or app.getEntry("Entry").startswith("/commands"):
-        msg = "/commands"
+        msg = "/commands&&"
     elif app.getEntry("Entry").startswith("/ping"):
         msg = "/ping&&"
     elif app.getEntry("Entry").startswith("/stats"):
