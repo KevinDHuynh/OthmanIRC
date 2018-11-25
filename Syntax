@@ -61,7 +61,9 @@ implemented by client:
 todo:
 /list #lists all public channels
     Sent from client: /list&&
-    Sent from server: /list&&#defaultChannel, #publicChannel, #privateChannel[Password].....
+    Sent from server:
+        if not op: /list&&#defaultChannel, #publicChannel1, #publicChannel2.....
+        if op: /list&&#defaultChannel, #publicChannel, #privateChannel[Password].....
 /version #list server version
     Sent from client: /version&&
     Sent from server: /version&&versionOfServer
