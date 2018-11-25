@@ -153,7 +153,7 @@ def send(event=None):  # event is passed by binders.
 
 
 def commandsend():
-
+    msg = None
     if app.getEntry("Entry").startswith("/msg"):
         command, user, message = app.getEntry("Entry").split(" ", 2)
         app.addListItem("consoleList", "<" + nickname + " --> " + user + "> " + message)
@@ -197,6 +197,7 @@ def commandsend():
     elif app.getEntry("Entry").startswith("/part"):
         try:
             command, channel = app.getEntry("Entry").split(" ")
+            msg = command+"&&"+channel
         except ValueError:
             app.addListItem(app.getTabbedFrameSelectedTab("Channels") + "List",
                             "Please specify a channel name.")
