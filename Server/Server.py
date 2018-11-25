@@ -138,27 +138,24 @@ def server_send_channelmessage(channelname, user, data):
 # Bad Password: False&&Bad Password
 # If channel does not exist and the user is op then will create new channel and add the user to it
 #   Create&&True&&[channel]
-def join(connection, data):
-    if not data.startswith("#"):
-        data = "#" + data
+def join(connection, channelname):
     try:
-        data, password = data.split("&&")
-        if data in channels:
-            if client_connect_channel(data, connection, password):
-                return "True&&" + data
+        channelname, password = channelname.split("&&")
+        if not channelname.startswith("#"):
+            channelname = "#" + channelname
+        if channelname in channels:
+            if client_connect_channel(channelname, connection, password):
+                return "True&&" + channelname
             else:
                 return "False&&Password"
         else:
-            if not clients[connection].isop:
-                return "False&&" + data + " does not exist"
-            Channel(data, password)
-            return "Created&&" + join(connection, data + "&&" + password)
+            return "False&&" + channelname + " does not exist"
 
     except ValueError:
-        if client_connect_channel(data, connection):
-            return "True&&" + data
+        if client_connect_channel(channelname, connection):
+            return "True&&" + channelname
         else:
-            return "False&&" + data
+            return "False&&" + channelname
 
 
 # Sends a msg from connection to user containing message, data should be user&&message
@@ -198,7 +195,6 @@ def reply(connection, data):
 # Returns "pong"
 def ping(connection):
     print("ping from" + clients[connection].username)
-    return "pong"
 
 
 # change client name
@@ -216,7 +212,7 @@ def nick(connection, username):
 # if client is op returns all servers with their passwords
 # returns #defaultChannel, #publicChannel, #privateChannel[Password].....
 def list_channels(connection):
-    channel_list = defaultchannel
+    channel_list = "List of channels:\n" + defaultchannel
     for x in channels:
         if channels[x].ispublic and not x == defaultchannel and not clients[connection].isop:
             channel_list = channel_list + ", " + x
@@ -231,12 +227,14 @@ def list_channels(connection):
 # Success: clientsusername, username, username..., username"
 # Not in channel: False&&Not in [channel]
 def names(connection, channelname):
-    list_of_names = clients[connection].username
+    if not channelname.startswith("#"):
+        channelname = "#" + channelname
+    list_of_names = "List of names in " + channelname + ":\n" + clients[connection].username
     if channelname in clients[connection].channelsin:
         for client_connection in channels[channelname].connectedclients:
             if not clients[client_connection].username == clients[connection].username:
                 list_of_names = list_of_names + ", " + clients[client_connection].username
-        return "True&&list_of_names"
+        return "True&&" + list_of_names
     return "False&&Not in " + channelname
 
 
@@ -244,7 +242,9 @@ def names(connection, channelname):
 # Success: /part&&True&&[channel]
 # User not in channel: /part&&False&&Not in [channel]
 def part(connection, channelname):
-    if channelname in clients[connection].username:
+    if not channelname.startswith("#"):
+        channelname = "#" + channelname
+    if channelname in clients[connection].channelsin:
         client_remove_channel(connection, channelname)
         return "True&&" + channelname
     else:
@@ -281,6 +281,8 @@ def oper(connection, data):
 def kick(connection, data):
     try:
         channelname, user = data.split("&&")
+        if not channelname.startswith("#"):
+            channelname = "#" + channelname
         if not clients[connection].isop:
             return "False&&Permission Denied"
         if channelname not in channels:
@@ -299,16 +301,17 @@ def kick(connection, data):
 # checks if sender is op
 # returns /commands&&/command1, /command2, /command3, ect.
 def commands(connection):
+    c = "List of commands:\n"
     if clients[connection].isop:
-        return '/quit, /join, /msg, /reply, /ping, /nick, /list, /version, /names, /part, /op, /kick, /commands'
+        return c + '/quit, /join, /msg, /reply, /ping, /nick, /list, /version, /names, /part, /op, /kick, /commands'
     else:
-        return '/quit, /join, /msg, /reply, /ping, /nick, /list, /version, /names, /part, /op, /commands'
+        return c + '/quit, /join, /msg, /reply, /ping, /nick, /list, /version, /names, /part, /op, /commands'
 
 
 # returns stats about the server
 def stats():
     timeup = str(datetime.timedelta(seconds=(time.time() - start_time)))
-    return "Server has seen up for" + timeup + " with " + str(len(clients)) + "connected clients"
+    return "Server has seen up for " + timeup + " with " + str(len(clients)) + " connected clients"
 
 
 """End Commands from Client"""
@@ -351,7 +354,8 @@ def handle_client(connection):
                 elif header == "/reply":
                     message = "/reply&&" + reply(connection, data)
                 elif header == "/ping":
-                    message = "/ping&&" + ping(connection)
+                    ping(connection)
+                    message = "/ping"
                 elif header == "/nick":
                     message = "/nick&&" + nick(connection, data)
                 elif header == "/list":
