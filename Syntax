@@ -37,7 +37,6 @@ implemented:
     Sent from server: /nick&&newnickname
 
 implemented by server:
-    /quit
     /join
     /msg
     /reply
@@ -53,6 +52,7 @@ implemented by server:
     /stats
 
 implemented by client:
+    /quit
     /msg
     /ping
     /nick
