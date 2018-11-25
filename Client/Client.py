@@ -16,7 +16,7 @@ last_command = ''
 channelList = []
 clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-
+#When client hits the connect button
 def press(button):
     if button == "Connect":
         global serverName
@@ -45,11 +45,11 @@ def press(button):
     else:
         app.stop()
         clientSocket.close()
+        exit(0)
 
-
+#Handles server-to-client messages
 def receive():
     global nickname
-    """Handles receiving of messages."""
     while True:
         try:
             msg = clientSocket.recv(1024).decode()
@@ -134,10 +134,9 @@ def receive():
             break
 
 
+#handles client-to-server messages
 def send(event=None):
     global last_command
-    # event is passed by binders.
-    """Handles sending of messages."""
     msg = "#"+app.getTabbedFrameSelectedTab("Channels") + "&&" +app.getEntry("Entry")
 
     if msg.startswith("#console&&") or app.getEntry("Entry").startswith("/"):
@@ -158,6 +157,7 @@ def send(event=None):
     app.setEntry("Entry", "")
 
 
+#handles command execution (server or client-side
 def commandsend():
     msg = None
     if app.getEntry("Entry").startswith("/msg"):
@@ -236,7 +236,7 @@ def commandsend():
         msg = None
     return msg
 
-
+#joins channel and creates new tab in GUI
 def channel(channelName):
     global channelList
     if channelName in channelList:
@@ -252,7 +252,7 @@ def channel(channelName):
         app.stopTabbedFrame()
         channelList.append(channelName)
 
-
+#Inital connection
 def connect():
     global nickname
     global autojoin
@@ -273,18 +273,18 @@ def connect():
         send()
     return True
 
-
+#Used for pressing up for last command
 def lastMessage():
     global last_command
     app.setEntry("Entry", last_command)
 
-
+#Disconnect by closing program
 def on_closing(event=None):
     clientSocket.close()
     exit(0)
 
-
-app = gui("OthmanIRC 0.04")
+#GUI execution
+app = gui("OthmanIRC 0.05")
 app.setSize(1020,780)
 app.icon = "icon.gif"
 
@@ -312,5 +312,6 @@ app.setEntry("Port", "6667")
 app.addButtons(["Connect", "Cancel"], press)
 app.stopSubWindow()
 
+#Start GUI and set end condition
 app.go(startWindow="Connect")
 app.setStopFunction(on_closing())
