@@ -1,5 +1,5 @@
-connecting msg password&&nickname&&autojoin
-connecting return server nickname&&channel
+connecting msg: /init&&username
+connecting return msg: /init&&assigned_name&&channel
 client send channel message channel&&data
 server send channel message channel&&user&&data
 
