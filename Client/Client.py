@@ -133,7 +133,7 @@ def receive():
             break
 
 
-def send():  # event is passed by binders.
+def send(event=None):  # event is passed by binders.
     """Handles sending of messages."""
     msg = "#"+app.getTabbedFrameSelectedTab("Channels") + "&&" +app.getEntry("Entry")
 
