@@ -35,30 +35,6 @@ implemented:
 /nick [nickname]
     Sent from client: /nick&&nickname
     Sent from server: /nick&&newnickname
-
-implemented by server:
-    /join
-    /msg
-    /reply
-    /ping
-    /nick
-    /list
-    /version
-    /names
-    /part
-    /oper
-    /kick
-    /commands
-    /stats
-
-implemented by client:
-    /quit
-    /msg
-    /ping
-    /nick
-    /join
-
-todo:
 /list #lists all public channels
     Sent from client: /list&&
     Sent from server:
