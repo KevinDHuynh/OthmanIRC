@@ -99,8 +99,14 @@ def receive():
                 command, version = msg.split("&&")
                 app.addListItem(app.getTabbedFrameSelectedTab("Channels") + "List", version)
             elif msg.startswith("/names"):
-                command, nameList = msg.split("&&")
-                app.addListItem(app.getTabbedFrameSelectedTab("Channels") + "List", nameList)
+                try:
+                    command, bool, nameList = msg.split("&&")
+                    app.addListItem(app.getTabbedFrameSelectedTab("Channels") + "List", nameList)
+                except ValueError:
+                    stuff = msg.split("&&")
+                    app.addListItem(app.getTabbedFrameSelectedTab("Channels") + "List",
+                                    "Could not print List ")
+                    print(*stuff)
             elif msg.startswith("/part"):
                 command, bool, message = msg.split("&&")
                 if bool == "True":
@@ -138,8 +144,9 @@ def receive():
 def send(event=None):
     global last_command
     msg = "#"+app.getTabbedFrameSelectedTab("Channels") + "&&" +app.getEntry("Entry")
-
-    if msg.startswith("#console&&") or app.getEntry("Entry").startswith("/"):
+    if "&&" in app.getEntry("Entry"):
+        app.addListItem(app.getTabbedFrameSelectedTab("Channels") + "List", "I can't believe you tried to break my program :(")
+    elif msg.startswith("#console&&") or app.getEntry("Entry").startswith("/"):
         print(app.getEntry("Entry")+" CONSOLE")
         msg = commandsend()
     else:
@@ -161,22 +168,36 @@ def send(event=None):
 def commandsend():
     msg = None
     if app.getEntry("Entry").startswith("/msg"):
-        command, user, message = app.getEntry("Entry").split(" ", 2)
-        app.addListItem("consoleList", "<" + nickname + " --> " + user + "> " + message)
-        msg = command + "&&" + user + "&&" + message
+        try:
+            command, user, message = app.getEntry("Entry").split(" ", 2)
+            app.addListItem("consoleList", "<" + nickname + " --> " + user + "> " + message)
+            msg = command + "&&" + user + "&&" + message
+        except ValueError:
+            app.addListItem(app.getTabbedFrameSelectedTab("Channels") + "List",
+                            "Correct syntax is /msg [user] (message)")
     elif app.getEntry("Entry").startswith("/reply"):
-        command, message = app.getEntry("Entry").split(" ", 1)
-        app.addListItem("consoleList", "<" + nickname + " --> " + last_msg + "> " + message)
-        msg = command + "&&" + message
+        try:
+            command, message = app.getEntry("Entry").split(" ", 1)
+            app.addListItem("consoleList", "<" + nickname + " --> " + last_msg + "> " + message)
+            msg = command + "&&" + message
+        except:
+            app.addListItem(app.getTabbedFrameSelectedTab("Channels") + "List",
+                            "Correct syntax is /reply (message)")
     elif app.getEntry("Entry").startswith("/join"):
-        channelPassword = " "
         try:
             command, channelstuff, channelPassword = app.getEntry("Entry").split(" ")
+            if not channelstuff.startswith("#"):
+                channelstuff = "#" + channelstuff
+            msg = command + "&&" + channelstuff + "&&" + channelPassword
         except ValueError:
-            command, channelstuff = app.getEntry("Entry").split(" ")
-        if not channelstuff.startswith("#"):
-            channelstuff = "#" + channelstuff
-        msg = command + "&&" + channelstuff + "&&" + channelPassword
+            try:
+                command, channelstuff = app.getEntry("Entry").split(" ")
+                if not channelstuff.startswith("#"):
+                    channelstuff = "#" + channelstuff
+                msg = command + "&&" + channelstuff + "&&" + " "
+            except ValueError:
+                app.addListItem(app.getTabbedFrameSelectedTab("Channels") + "List",
+                                "Correct syntax is /join [channel] [password]")
     elif app.getEntry("Entry").startswith("/nick"):
         try:
             command, nick = app.getEntry("Entry").split(" ")
@@ -187,9 +208,10 @@ def commandsend():
     elif app.getEntry("Entry").startswith("/oper") or app.getEntry("Entry").startswith("/op"):
         try:
             command, user, password = app.getEntry("Entry").split(" ")
-            msg = command + "&&" + user + "&&" + password
+            msg = "/oper&&" + user + "&&" + password
         except ValueError:
-            msg = None
+            app.addListItem(app.getTabbedFrameSelectedTab("Channels") + "List",
+                            "Correct syntax is /op [user] [password]")
     elif app.getEntry("Entry").startswith("/kick"):
         try:
             command, channel, user = app.getEntry("Entry").split(" ")
@@ -232,9 +254,11 @@ def commandsend():
         app.quit()
         exit(0)
     else:
-        app.addListItem("consoleList", "Command not recognized by client.")
+        app.addListItem(app.getTabbedFrameSelectedTab("Channels") + "List",
+                        "Command not recognized by client.")
         msg = None
     return msg
+
 
 #joins channel and creates new tab in GUI
 def channel(channelName):
@@ -251,6 +275,7 @@ def channel(channelName):
         app.stopTab()
         app.stopTabbedFrame()
         channelList.append(channelName)
+
 
 #Inital connection
 def connect():
@@ -273,18 +298,21 @@ def connect():
         send()
     return True
 
+
 #Used for pressing up for last command
 def lastMessage():
     global last_command
     app.setEntry("Entry", last_command)
 
-#Disconnect by closing program
+
+#Used when gui is closed
 def on_closing(event=None):
     clientSocket.close()
     exit(0)
 
+
 #GUI execution
-app = gui("OthmanIRC 0.05")
+app = gui("OthmanIRC Client 0.08")
 app.setSize(1020,780)
 app.icon = "icon.gif"
 
