@@ -13,8 +13,6 @@ implemented:
         Joined Channel: /join&&True&&[channel]
         Channel does not exist: /join&&False&&[channel] does not exist
         Bad Password: /join&&False&&Bad Password
-        If channel does not exist and the user is op then will create new channel and add the user to it
-            /join&&Create&&True&&[channel]
 /msg [user] [message]
     Sent from client:  /msg&&[user]&&[message]
     Sent from server:
