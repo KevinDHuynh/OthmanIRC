@@ -5,7 +5,7 @@ import datetime
 
 myHost = 'localhost'
 myPort = 6667
-version = '0.0.8'
+server_version = '0.1.0'
 
 start_time = time.time()
 defaultchannel = "#general"
@@ -120,7 +120,8 @@ def get_username_num(username, num):
     return name
 
 
-# sends message to all clients in channel from user with time stamp
+# sends message to all clients in channel from user
+# sends message to clients in format [channelname]&&[user]&&[data]
 def server_send_channelmessage(channelname, user, data):
     message = str(channelname + "&&" + user + "&&" + data)
     for connection in clients:
@@ -137,7 +138,7 @@ def server_send_channelmessage(channelname, user, data):
 # Channel does not exist: False&&[channel] does not exist
 # Bad Password: False&&Bad Password
 # If channel does not exist and the user is op then will create new channel and add the user to it
-#   Create&&True&&[channel]
+# Create&&True&&[channel]
 def join(connection, channelname):
     try:
         channelname, password = channelname.split("&&")
@@ -192,13 +193,13 @@ def reply(connection, data):
     return "False&&User not found"
 
 
-# Returns "pong"
+# Print out who pinged the server
 def ping(connection):
     print("ping from" + clients[connection].username)
 
 
 # change client name
-# returns newusername
+# returns the newusername assigned
 def nick(connection, username):
     claimedusernames.remove(clients[connection].username)
     newname = get_username(username)
@@ -360,7 +361,8 @@ def handle_client(connection):
                 elif header == "/list":
                     message = "/list&&" + list_channels(connection)
                 elif header == "/version":
-                    message = "/version&&OthmanIRC Server v" + version+ " https://github.com/KevinDHuynh/OthmanIRC"
+                    message = "/version&&OthmanIRC Server v" + server_version + \
+                              " https://github.com/KevinDHuynh/OthmanIRC"
                 elif header == "/names":
                     message = "/names&&" + names(connection, data)
                 elif header == "/part":
@@ -386,10 +388,12 @@ def handle_client(connection):
                     connection.send(str(header + " is an unknown channel").encode())
             else:
                 connection.send("Unknown Message Format".encode())
+
         # Connection Randomly Closed by Client
         except (ConnectionResetError, ConnectionAbortedError):
             clientremoved(connection, "because connection was forcibly closed by the client")
             return
+
         # Split function fails
         except ValueError:
             connection.send("Unknown Message Format".encode())
