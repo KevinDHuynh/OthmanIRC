@@ -16,7 +16,8 @@ last_command = ''
 channelList = []
 clientSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
-#When client hits the connect button
+
+# When client hits the connect button
 def press(button):
     if button == "Connect":
         global serverName
@@ -35,7 +36,7 @@ def press(button):
         if not serverPort:
             serverport = 6667
         if not nickname:
-            nickname = 'Guest' + str(random.randint(1000,9999))
+            nickname = 'Guest' + str(random.randint(1000, 9999))
         if not serverName:
             app.errorBox("noServer", "No server IP was given.")
         else:
@@ -47,25 +48,26 @@ def press(button):
         clientSocket.close()
         exit(0)
 
-#Handles server-to-client messages
+
+# Handles server-to-client messages
 def receive():
     global nickname
     while True:
         try:
             msg = clientSocket.recv(1024).decode()
-            print(msg+" original")
+            print(msg + " original")
             if msg.startswith("/init"):
                 command, user, ch = msg.split("&&")
                 msgChannel = ch.replace("#", "")
-                print(ch+" Channel")
+                print(ch + " Channel")
                 nickname = user
                 channel(msgChannel)
             elif msg.startswith("/msg"):
-                command,user,message = msg.split("&&")
+                command, user, message = msg.split("&&")
                 if user.startswith("False"):
-                    app.addListItem(app.getTabbedFrameSelectedTab("Channels")+"List", "User does not exist.")
+                    app.addListItem(app.getTabbedFrameSelectedTab("Channels") + "List", "User does not exist.")
                 else:
-                    app.addListItem(app.getTabbedFrameSelectedTab("Channels")+"List", "<"+user+"> " + message)
+                    app.addListItem(app.getTabbedFrameSelectedTab("Channels") + "List", "<" + user + "> " + message)
                     global last_msg
                     last_msg = user
             elif msg.startswith("/reply"):
@@ -73,7 +75,7 @@ def receive():
                 try:
                     command, user, message = msg.split("&&")
                 except ValueError:
-                    command,message = msg.split("&&")
+                    command, message = msg.split("&&")
                 if user:
                     app.addListItem("consoleList", message)
                 else:
@@ -81,20 +83,21 @@ def receive():
             elif msg.startswith("/nick"):
                 command, newnick = msg.split("&&")
                 nickname = newnick
-                app.addListItem(app.getTabbedFrameSelectedTab("Channels")+"List", "Changed nickname to: "+newnick)
+                app.addListItem(app.getTabbedFrameSelectedTab("Channels") + "List", "Changed nickname to: " + newnick)
             elif msg.startswith("/join"):
-                command,success,channelName = msg.split("&&")
+                command, success, channelName = msg.split("&&")
                 if success == "False":
-                    app.addListItem(app.getTabbedFrameSelectedTab("Channels")+"List", "Cannot join channel.")
+                    app.addListItem(app.getTabbedFrameSelectedTab("Channels") + "List", "Cannot join channel.")
                 elif success == "Password":
-                    app.addListItem(app.getTabbedFrameSelectedTab("Channels")+"List", "Incorrect Password for channel.")
+                    app.addListItem(app.getTabbedFrameSelectedTab("Channels") + "List",
+                                    "Incorrect Password for channel.")
                 else:
                     channel(channelName)
             elif msg.startswith("/ping"):
-                app.addListItem(app.getTabbedFrameSelectedTab("Channels")+"List", "Pong!")
+                app.addListItem(app.getTabbedFrameSelectedTab("Channels") + "List", "Pong!")
             elif msg.startswith("/list"):
                 command, channelList = msg.split("&&")
-                app.addListItem(app.getTabbedFrameSelectedTab("Channels")+"List",channelList)
+                app.addListItem(app.getTabbedFrameSelectedTab("Channels") + "List", channelList)
             elif msg.startswith("/version"):
                 command, version = msg.split("&&")
                 app.addListItem(app.getTabbedFrameSelectedTab("Channels") + "List", version)
@@ -111,9 +114,9 @@ def receive():
                 command, bool, message = msg.split("&&")
                 if bool == "True":
                     if message.startswith("#"):
-                        message = message.replace("#","")
+                        message = message.replace("#", "")
                     app.setTabbedFrameDisabledTab("Channels", message, disabled=True)
-                    app.addListItem(app.getTabbedFrameSelectedTab("Channels") + "List", "Successfully Left "+message)
+                    app.addListItem(app.getTabbedFrameSelectedTab("Channels") + "List", "Successfully Left " + message)
                 else:
                     app.addListItem(app.getTabbedFrameSelectedTab("Channels") + "List", message)
             elif msg.startswith("/kick"):
@@ -129,31 +132,32 @@ def receive():
                 command, boolean, message = msg.split("&&")
                 app.addListItem(app.getTabbedFrameSelectedTab("Channels") + "List", message)
             elif msg.startswith("Unknown Message Format"):
-                app.addListItem("consoleList","Command not recognized by server.")
+                app.addListItem("consoleList", "Command not recognized by server.")
             else:
                 msgChannel, msgUser, msgData = msg.split("&&")
                 msgChannel = msgChannel.replace("#", "")
-                print(msgChannel+" destination channel")
-                app.addListItem(msgChannel+"List", msgUser+": "+msgData)
+                print(msgChannel + " destination channel")
+                app.addListItem(msgChannel + "List", msgUser + ": " + msgData)
 
         except OSError:
             break
 
 
-#handles client-to-server messages
+# handles client-to-server messages
 def send(event=None):
     global last_command
-    msg = "#"+app.getTabbedFrameSelectedTab("Channels") + "&&" +app.getEntry("Entry")
+    msg = "#" + app.getTabbedFrameSelectedTab("Channels") + "&&" + app.getEntry("Entry")
     if "&&" in app.getEntry("Entry"):
-        app.addListItem(app.getTabbedFrameSelectedTab("Channels") + "List", "I can't believe you tried to break my program :(")
+        app.addListItem(app.getTabbedFrameSelectedTab("Channels") + "List",
+                        "I can't believe you tried to break my program :(")
     elif msg.startswith("#console&&") or app.getEntry("Entry").startswith("/"):
-        print(app.getEntry("Entry")+" CONSOLE")
+        print(app.getEntry("Entry") + " CONSOLE")
         msg = commandsend()
     else:
         channelMsg, msgBody = msg.split("&&")
         if channelMsg.startswith("#"):
-            channelMsg = channelMsg.replace("#","")
-        app.addListItem(channelMsg+"List", nickname +": " + msgBody)
+            channelMsg = channelMsg.replace("#", "")
+        app.addListItem(channelMsg + "List", nickname + ": " + msgBody)
     try:
         if msg:
             print(msg)
@@ -164,7 +168,7 @@ def send(event=None):
     app.setEntry("Entry", "")
 
 
-#handles command execution (server or client-side
+# handles command execution (server or client-side
 def commandsend():
     msg = None
     if app.getEntry("Entry").startswith("/msg"):
@@ -201,7 +205,7 @@ def commandsend():
     elif app.getEntry("Entry").startswith("/nick"):
         try:
             command, nick = app.getEntry("Entry").split(" ")
-            msg = command+"&&"+nick
+            msg = command + "&&" + nick
         except ValueError:
             app.addListItem(app.getTabbedFrameSelectedTab("Channels") + "List",
                             "Please supply a nickname")
@@ -225,7 +229,7 @@ def commandsend():
     elif app.getEntry("Entry").startswith("/part"):
         try:
             command, channel = app.getEntry("Entry").split(" ")
-            msg = command+"&&"+channel
+            msg = command + "&&" + channel
         except ValueError:
             app.addListItem(app.getTabbedFrameSelectedTab("Channels") + "List",
                             "Please specify a channel name.")
@@ -250,6 +254,7 @@ def commandsend():
     elif app.getEntry("Entry").startswith("/stats"):
         msg = "/stats&&"
     elif app.getEntry("Entry").startswith("/quit"):
+        clientSocket.send("/quit&&".encode())
         clientSocket.close()
         app.quit()
         exit(0)
@@ -260,24 +265,24 @@ def commandsend():
     return msg
 
 
-#joins channel and creates new tab in GUI
+# joins channel and creates new tab in GUI
 def channel(channelName):
     global channelList
     if channelName in channelList:
-        app.addListItem("channelList","ERROR: Already connected to channel")
+        app.addListItem("channelList", "ERROR: Already connected to channel")
     else:
         if channelName.startswith("#"):
             channelName = channelName.replace("#", "")
         app.openTabbedFrame("Channels")
         app.startTab(channelName)
-        app.addListBox(channelName+"List")
-        app.addListItem(channelName+"List", "Joined channel")
+        app.addListBox(channelName + "List")
+        app.addListItem(channelName + "List", "Joined channel")
         app.stopTab()
         app.stopTabbedFrame()
         channelList.append(channelName)
 
 
-#Inital connection
+# Inital connection
 def connect():
     global nickname
     global autojoin
@@ -292,28 +297,28 @@ def connect():
     receive_thread.start()
     if autojoin:
         if password:
-            app.setEntry("Entry", "/join "+autojoin+" "+password)
+            app.setEntry("Entry", "/join " + autojoin + " " + password)
         else:
-            app.setEntry("Entry", "/join "+autojoin+" "+password)
+            app.setEntry("Entry", "/join " + autojoin + " " + password)
         send()
     return True
 
 
-#Used for pressing up for last command
+# Used for pressing up for last command
 def lastMessage():
     global last_command
     app.setEntry("Entry", last_command)
 
 
-#Used when gui is closed
+# Used when gui is closed
 def on_closing(event=None):
     clientSocket.close()
     exit(0)
 
 
-#GUI execution
+# GUI execution
 app = gui("OthmanIRC Client 0.08")
-app.setSize(1020,780)
+app.setSize(1020, 780)
 app.icon = "icon.gif"
 
 app.startTabbedFrame("Channels")
@@ -325,7 +330,7 @@ app.stopTabbedFrame()
 
 app.addLabelEntry("Entry").bind("<Return>", send)
 app.bindKey("<Up>", lastMessage)
-app.setEntryDefault("Entry","Enter message here.")
+app.setEntryDefault("Entry", "Enter message here.")
 app.addButton("Send", send)
 
 app.startSubWindow("Connect")
@@ -340,6 +345,6 @@ app.setEntry("Port", "6667")
 app.addButtons(["Connect", "Cancel"], press)
 app.stopSubWindow()
 
-#Start GUI and set end condition
+# Start GUI and set end condition
 app.go(startWindow="Connect")
 app.setStopFunction(on_closing())
