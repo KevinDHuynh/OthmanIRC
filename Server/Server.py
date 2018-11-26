@@ -360,7 +360,7 @@ def handle_client(connection):
                 elif header == "/list":
                     message = "/list&&" + list_channels(connection)
                 elif header == "/version":
-                    message = "/version&&" + version
+                    message = "/version&&OthmanIRC Server v" + version+ " https://github.com/KevinDHuynh/OthmanIRC"
                 elif header == "/names":
                     message = "/names&&" + names(connection, data)
                 elif header == "/part":
