@@ -1,4 +1,7 @@
+# -*- coding: utf-8 -*-
+
 import _thread
+import random
 import socket
 import time
 import datetime
@@ -107,6 +110,10 @@ def client_first_connect(connection, data):
 # if nickname is taken will use get_nickname_num if name is taken and append a number to end of nickname
 def get_username(username):
     username = username.replace(" ", "")
+    username = username.replace("#", "")
+    username = username.replace("&", "")
+    if username == "":
+        username = 'Guest' + str(random.randint(1000, 9999))
     if username in claimedusernames and username != "Server":
         username = get_username_num(username, 1)
     return username
@@ -333,7 +340,9 @@ def clientremoved(connection, error="for unknown reason"):
 
 # Handles the client with the thread
 def handle_client(connection):
-    client_first_connect(connection, connection.recv(1024).decode())
+    data = connection.recv(1024).decode()
+    print("Received from new connection:" + data)
+    client_first_connect(connection, data)
     thisclient = clients[connection]
     connection.send(("/init&&" + str(thisclient.username) + "&&" + thisclient.strchannelsin()).encode())
 
