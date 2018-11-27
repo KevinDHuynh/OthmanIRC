@@ -330,7 +330,7 @@ def on_closing(event=None):
 
 # GUI execution
 app = gui("OthmanIRC Client 0.08")
-app.setSize(800,600)
+app.setSize(600,350)
 app.setFont(10)
 app.icon = "icon.gif"
 
