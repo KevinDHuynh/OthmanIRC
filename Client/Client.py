@@ -46,6 +46,23 @@ def press(button):
         app.stop()
         clientSocket.close()
         exit(0)
+#When client menu item is selected
+def menuPress(choice):
+    print(choice)
+
+    if choice == "Join a New Server":
+        app.go(startWindow="Connect")
+    if choice == "Exit":
+        exit(0)
+    if choice == "font":
+        print()
+    if str.isdigit(choice):
+        if int(choice) >= 10 & int(choice) <= 15:
+            app.setFont(int(choice))
+    bgColors = ["blue", "green", "white", "red", "black", "grey"]
+    for color in bgColors:
+        if str(choice) == color:
+            app.setBg(str(choice))
 
 #Handles server-to-client messages
 def receive():
@@ -313,20 +330,29 @@ def on_closing(event=None):
 
 #GUI execution
 app = gui("OthmanIRC Client 0.08")
-app.setSize(1020,780)
+app.setSize(800,600)
+app.setFont(10)
 app.icon = "icon.gif"
 
-app.startTabbedFrame("Channels")
+app.addMenuList('File', ["Join a New Server", "Exit"], menuPress)
+app.createMenu("Config")
+app.addSubMenu("Config", "Font Size")
+for i in range(6):
+    app.addMenuRadioButton("Font Size", "1" + str(i), "1" + str(i), menuPress)
+app.addSubMenu('Config', "Background Color")
+app.addMenuList("Background Color", ["blue", "green", "white", "red", "black", "grey"], menuPress)
+
+app.startTabbedFrame("Channels",1,0,3)
 app.startTab("console")
 app.addListBox("consoleList")
 app.addListItem("consoleList", "Successfully connected to server")
 app.stopTab()
 app.stopTabbedFrame()
 
-app.addLabelEntry("Entry").bind("<Return>", send)
+app.addLabelEntry("Entry",2,0,2).bind("<Return>", send)
 app.bindKey("<Up>", lastMessage)
-app.setEntryDefault("Entry","Enter message here.")
-app.addButton("Send", send)
+app.setEntryDefault("Entry","Enter your message/command here.")
+app.addButton("Send", send,2,2,3)
 
 app.startSubWindow("Connect")
 app.addLabelEntry("Server")
