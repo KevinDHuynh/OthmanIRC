@@ -22,13 +22,11 @@ claimedusernames = []
 
 op_username = "kyle"
 op_password = "cornbean"
-# op_clients = [connection, connection, connection]
-op_clients = []
 
 # Creates a TCP Server with Port# 6667
 sockobj = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sockobj.bind((myHost, myPort))
-sockobj.listen(10)
+sockobj.listen(16)
 
 print("Server established with Port:" + str(myPort))
 
@@ -272,7 +270,6 @@ def oper(connection, data):
         username, password = data.split("&&")
         if username == op_username and password == op_password:
             clients[connection].isop = True
-            op_clients.append(connection)
             return "True&&Now op"
         else:
             return "False&&Op denied"
@@ -329,8 +326,6 @@ def stats():
 # Removes client from all channels that the client has joined
 def clientremoved(connection, error="for unknown reason"):
     print(str(clients[connection].username) + " removed from server " + str(error))
-    if clients[connection].isop:
-        op_clients.remove(connection)
     # remove client from all connected channels connectedclients list
     for channelname in clients[connection].channelsin:
         channels[channelname].connectedclients.pop(connection)
