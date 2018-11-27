@@ -52,6 +52,7 @@ def menuPress(choice):
     print(choice)
 
     if choice == "Join a New Server":
+        clientSocket.close()
         app.go(startWindow="Connect")
     if choice == "Exit":
         exit(0)
@@ -69,6 +70,7 @@ def menuPress(choice):
 # Handles server-to-client messages
 def receive():
     global nickname
+    counter = 0
     while True:
         try:
             msg = clientSocket.recv(1024).decode()
@@ -157,6 +159,7 @@ def receive():
                 app.addListItem(msgChannel + "List", msgUser + ": " + msgData)
 
         except OSError:
+            app.setStatusbarBg("red",0)
             break
 
 
@@ -358,6 +361,10 @@ app.addLabelEntry("Entry",2,0,2).bind("<Return>", send)
 app.bindKey("<Up>", lastMessage)
 app.setEntryDefault("Entry","Enter your message/command here.")
 app.addButton("Send", send,2,2,3)
+
+app.addStatusbar(fields=1)
+app.setStatusbar("Connection Status",0)
+app.setStatusbarBg("green", 0)
 
 app.startSubWindow("Connect")
 app.addLabelEntry("Server")
